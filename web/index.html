@@ -11,14 +11,16 @@
   <link rel="stylesheet" href="vendor/leaflet.css"/>
   <script src="vendor/leaflet.js"></script>
   <script>
-  // Ghim mac dinh ve bang SVG nhung thang trong trang -> khong can file anh ngoai
-  if(window.L&&L.Icon&&L.Icon.Default){
+  // Ghim ket qua tra cell: hinh giot nuoc do + hinh nguoi trang.
+  // Ve bang SVG nhung thang trong trang nen khong can file anh ngoai.
+  (function(){
+    if(!window.L || !L.Icon || !L.Icon.Default) return;
+    var PIN = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMCIgaGVpZ2h0PSI0NCIgdmlld0JveD0iMCAwIDMwIDQ0Ij48cGF0aCBkPSJNMTUgMS4yQzcuOSAxLjIgMi4yIDYuOSAyLjIgMTRjMCA5LjYgMTIuOCAyOC44IDEyLjggMjguOFMyNy44IDIzLjYgMjcuOCAxNEMyNy44IDYuOSAyMi4xIDEuMiAxNSAxLjJ6IiBmaWxsPSIjZTAzMTMxIiBzdHJva2U9IiM4YzFmMWYiIHN0cm9rZS13aWR0aD0iMS42IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGNpcmNsZSBjeD0iMTUiIGN5PSIxMC42IiByPSIzLjciIGZpbGw9IiNmZmZmZmYiLz48cGF0aCBkPSJNMTUgMTUuNmMtNC4yIDAtNi44IDIuNS02LjggNS4zIDAgLjcuNSAxLjIgMS4yIDEuMmgxMS4yYy43IDAgMS4yLS41IDEuMi0xLjIgMC0yLjgtMi42LTUuMy02LjgtNS4zeiIgZmlsbD0iI2ZmZmZmZiIvPjwvc3ZnPg==";
     L.Icon.Default.mergeOptions({
-      iconUrl:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNSIgaGVpZ2h0PSI0MSIgdmlld0JveD0iMCAwIDI1IDQxIj48cGF0aCBkPSJNMTIuNSAwLjVDNS44NyAwLjUgMC41IDUuODcgMC41IDEyLjVjMCA5LjEgMTIgMjggMTIgMjhzMTItMTguOSAxMi0yOEMyNC41IDUuODcgMTkuMTMgMC41IDEyLjUgMC41eiIgZmlsbD0iIzJiODJjYiIgc3Ryb2tlPSIjMTc1MjdhIiBzdHJva2Utd2lkdGg9IjEiLz48Y2lyY2xlIGN4PSIxMi41IiBjeT0iMTIuNSIgcj0iNC42IiBmaWxsPSIjZmZmZmZmIi8+PC9zdmc+",
-      iconRetinaUrl:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNSIgaGVpZ2h0PSI0MSIgdmlld0JveD0iMCAwIDI1IDQxIj48cGF0aCBkPSJNMTIuNSAwLjVDNS44NyAwLjUgMC41IDUuODcgMC41IDEyLjVjMCA5LjEgMTIgMjggMTIgMjhzMTItMTguOSAxMi0yOEMyNC41IDUuODcgMTkuMTMgMC41IDEyLjUgMC41eiIgZmlsbD0iIzJiODJjYiIgc3Ryb2tlPSIjMTc1MjdhIiBzdHJva2Utd2lkdGg9IjEiLz48Y2lyY2xlIGN4PSIxMi41IiBjeT0iMTIuNSIgcj0iNC42IiBmaWxsPSIjZmZmZmZmIi8+PC9zdmc+",
-      shadowUrl:null, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34]
+      iconUrl: PIN, iconRetinaUrl: PIN, shadowUrl: null,
+      iconSize: [30,44], iconAnchor: [15,43], popupAnchor: [0,-38]
     });
-  }
+  })();
 </script>
   <script src="vendor/jszip.min.js"></script>
   <script src="mobifone_bts.js"></script>
