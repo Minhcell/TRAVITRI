@@ -1,0 +1,77 @@
+name: Build APK TRA CELL
+
+on:
+  workflow_dispatch:          # bấm nút Run workflow để build
+  push:
+    branches: [ main ]
+    paths:
+      - 'android/**'
+      - '.github/workflows/build-android.yml'
+
+permissions:
+  contents: write             # cần để tạo Release chứa file APK
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Cài JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Cài Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0'
+
+      - name: Cài Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Khôi phục keystore ký app
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | tr -d '\n' | base64 -d > "$RUNNER_TEMP/signing.keystore"
+          ls -l "$RUNNER_TEMP/signing.keystore"
+
+      - name: Build APK + AAB
+        working-directory: android
+        env:
+          KEYSTORE_PATH: ${{ runner.temp }}/signing.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          VERSION_CODE: ${{ github.run_number }}
+          VERSION_NAME: 1.0.${{ github.run_number }}
+        run: gradle assembleRelease bundleRelease --no-daemon --stacktrace
+
+      - name: Gom file kết quả
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/app-release.apk    dist/TRA_CELL.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab dist/TRA_CELL.aab
+          ls -lh dist
+
+      - name: Tải lên artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TRA_CELL-build-${{ github.run_number }}
+          path: dist/*
+
+      - name: Tạo Release để tải APK về máy
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: TRA CELL 1.0.${{ github.run_number }}
+          body: |
+            Bản build tự động số ${{ github.run_number }}.
+            Tải file TRA_CELL.apk rồi cài trực tiếp lên máy.
+          files: |
+            dist/TRA_CELL.apk
+            dist/TRA_CELL.aab
