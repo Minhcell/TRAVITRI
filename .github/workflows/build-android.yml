@@ -4,12 +4,6 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
-    paths:
-      - '**/settings.gradle'
-      - '**/build.gradle'
-      - '**/AndroidManifest.xml'
-      - '**/res/**'
-      - '.github/workflows/build-android.yml'
 
 permissions:
   contents: write
@@ -30,21 +24,20 @@ jobs:
           echo "--------------------------------"
           SG=$(find . -path ./.git -prune -o -name settings.gradle -print 2>/dev/null | head -1)
           if [ -z "$SG" ]; then
-            SG=$(find . -path ./.git -prune -o -name settings.gradle.kts -print 2>/dev/null | head -1)
-          fi
-          if [ -z "$SG" ]; then
-            echo "::error::Khong tim thay settings.gradle trong repo."
-            echo "::error::Nghia la cac file gradle chua duoc upload len GitHub."
+            echo "::error::Khong tim thay settings.gradle. Chua upload cac file gradle len repo."
             exit 1
           fi
           DIR=$(dirname "$SG")
-          echo "Tim thay du an Android tai: $DIR"
+          echo "Du an Android tai: $DIR"
           echo "dir=$DIR" >> "$GITHUB_OUTPUT"
 
-      - name: Tao lai icon va splash (khong dung file PNG trong repo)
+      - name: Tao icon (khong dung file PNG trong repo)
         run: |
           RES="${{ steps.find.outputs.dir }}/app/src/main/res"
           mkdir -p "$RES"
+          # Xoa sach moi file PNG con sot trong repo (ke ca file hong
+          # hoac splash.png cua ban TWA cu) roi tao lai tu dau
+          find "$RES" -name '*.png' -print -delete || true
           cat > /tmp/icon.b64 <<'ICON_EOF'
           iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYAAAD0eNT6AAAUT0lEQVR4nO3dzZEUx9YG4B6CNQQb
           TFDIGHkgC7AIC+SBjFHIBDYEGAB3wW3RM/T0dFXlzzl5nmfzRXwRd6jOysr3zaye0cOJZt68e/99
@@ -141,7 +134,6 @@ jobs:
           AAAAAElFTkSuQmCC
           ICON_EOF
           base64 -d /tmp/icon.b64 > /tmp/icon-512.png
-          ls -l /tmp/icon-512.png
           python3 -m pip install --quiet --upgrade pillow \
             || python3 -m pip install --quiet --break-system-packages --upgrade pillow \
             || true
@@ -154,12 +146,54 @@ jobs:
               d = os.path.join(res, 'mipmap-' + name)
               os.makedirs(d, exist_ok=True)
               src.resize((size,size), Image.LANCZOS).save(os.path.join(d,'ic_launcher.png'))
-          d = os.path.join(res, 'drawable')
-          os.makedirs(d, exist_ok=True)
-          src.resize((384,384), Image.LANCZOS).save(os.path.join(d,'splash.png'))
-          print('Da tao xong icon va splash')
+          print('Da tao xong 5 icon')
           PY_EOF
-          find "$RES" -name '*.png' -exec ls -l {} \;
+          find "$RES" -name 'ic_launcher.png' -exec ls -l {} \;
+
+      - name: Dong goi trang web vao trong APK
+        run: |
+          DIR="${{ steps.find.outputs.dir }}"
+          WWW="$DIR/app/src/main/assets/www"
+          SRC="$DIR/web"
+          mkdir -p "$WWW/vendor"
+
+          if [ ! -f "$SRC/index.html" ]; then
+            echo "::error::Thieu file web/index.html trong repo."
+            exit 1
+          fi
+          cp "$SRC/index.html" "$WWW/index.html"
+
+          # Thu vien: lay ban chinh chu tu kho npm roi nhet thang vao APK
+          npmget() {
+            curl -fsSL "$1" | tar xzO "$2" > "$3" || { echo "::error::Khong tai duoc $3"; exit 1; }
+          }
+          L=https://registry.npmjs.org/leaflet/-/leaflet-1.9.4.tgz
+          npmget "$L" package/dist/leaflet.js  "$WWW/vendor/leaflet.js"
+          npmget "$L" package/dist/leaflet.css "$WWW/vendor/leaflet.css"
+          npmget https://registry.npmjs.org/jszip/-/jszip-3.10.1.tgz \
+                 package/dist/jszip.min.js "$WWW/vendor/jszip.min.js"
+          npmget https://registry.npmjs.org/xlsx/-/xlsx-0.18.5.tgz \
+                 package/dist/xlsx.full.min.js "$WWW/vendor/xlsx.full.min.js"
+          npmget https://registry.npmjs.org/mammoth/-/mammoth-1.4.2.tgz \
+                 package/mammoth.browser.min.js "$WWW/vendor/mammoth.browser.min.js"
+
+          # Du lieu BTS: uu tien file trong repo, khong co thi lay tu repo tracellmoi
+          for f in mobifone_bts.js vinaphone_bts.js viettel_bts.js vietnamobile_bts.js; do
+            if [ -f "$SRC/$f" ]; then
+              cp "$SRC/$f" "$WWW/$f"
+              echo "$f: lay tu repo"
+            else
+              curl -fsSL -o "$WWW/$f" "https://raw.githubusercontent.com/Minhcell/tracellmoi/main/$f" \
+                && echo "$f: tai tu tracellmoi" \
+                || { echo "::error::Khong lay duoc $f. Hay upload file nay vao thu muc web/ cua repo."; exit 1; }
+            fi
+          done
+
+          echo "--- Noi dung nhet vao APK ---"
+          find "$WWW" -type f -exec ls -lh {} \;
+          for f in "$WWW/index.html" "$WWW/vendor/leaflet.js" "$WWW/mobifone_bts.js"; do
+            if [ ! -s "$f" ]; then echo "::error::File rong: $f"; exit 1; fi
+          done
 
       - name: Cai JDK 17
         uses: actions/setup-java@v4
@@ -194,7 +228,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           VERSION_CODE: ${{ github.run_number }}
-          VERSION_NAME: 1.0.${{ github.run_number }}
+          VERSION_NAME: 2.0.${{ github.run_number }}
         run: gradle assembleRelease bundleRelease --no-daemon --stacktrace
 
       - name: Gom file ket qua
@@ -214,10 +248,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: TRA CELL 1.0.${{ github.run_number }}
+          name: TRA CELL 2.0.${{ github.run_number }}
           body: |
-            Ban build tu dong so ${{ github.run_number }}.
-            Tai file TRA_CELL.apk roi cai truc tiep len may.
+            Ban build so ${{ github.run_number }}.
+            App chay doc lap, trang web nam san trong APK.
           files: |
             dist/TRA_CELL.apk
             dist/TRA_CELL.aab
