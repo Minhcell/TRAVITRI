@@ -1,0 +1,49 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    // namespace chi dung cho lop R/BuildConfig; applicationId moi la ten goi that
+    namespace 'io.github.minhcell.tracell'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "io.github.minhcell.TRACELLMOI"
+        minSdk 23
+        targetSdk 34
+        // Moi lan build tren GitHub versionCode tu tang (run_number + 100)
+        versionCode ((System.getenv("VERSION_CODE") ?: "1").toInteger() + 100)
+        versionName System.getenv("VERSION_NAME") ?: "1.0.1"
+    }
+
+    signingConfigs {
+        release {
+            def ks = System.getenv("KEYSTORE_PATH")
+            if (ks) {
+                storeFile file(ks)
+                storePassword System.getenv("KEYSTORE_PASSWORD")
+                keyAlias System.getenv("KEY_ALIAS")
+                keyPassword System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (System.getenv("KEYSTORE_PATH")) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}
