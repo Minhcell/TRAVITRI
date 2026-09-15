@@ -94,7 +94,7 @@
                 <data
                     android:scheme="https"
                     android:host="@string/hostName"
-                    android:pathPrefix="/tracellmoi/" />
+                    android:pathPrefix="@string/pathPrefix" />
             </intent-filter>
         </activity>
 
