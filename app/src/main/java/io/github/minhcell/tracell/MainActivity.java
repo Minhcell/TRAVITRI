@@ -62,6 +62,12 @@ public class MainActivity extends AppCompatActivity {
         s.setJavaScriptCanOpenWindowsAutomatically(true);
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setTextZoom(100);
+        // May chu anh ban do (OpenStreetMap) chan cac ung dung khong khai bao
+        // ten tuoi. Them ten app vao cuoi User-Agent cho dung quy dinh.
+        try {
+            s.setUserAgentString(s.getUserAgentString() + " TraCellBTS/2.0");
+        } catch (Exception ignored) {
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             s.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         }
