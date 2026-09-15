@@ -11,15 +11,18 @@
   <link rel="stylesheet" href="vendor/leaflet.css"/>
   <script src="vendor/leaflet.js"></script>
   <script>
-  // Ghim ket qua tra cell: hinh giot nuoc do + hinh nguoi trang.
-  // Ve bang SVG nhung thang trong trang nen khong can file anh ngoai.
+  // Ghim ket qua tra cell: giot nuoc do + hinh nguoi trang, ve bang SVG trong trang.
+  // Dung L.icon() chu KHONG dung L.Icon.Default: Default tu cong them duong dan
+  // anh vao truoc iconUrl, lam hong dia chi data: -> ra o vuong "khong xac dinh".
   (function(){
-    if(!window.L || !L.Icon || !L.Icon.Default) return;
+    if(!window.L || !L.Marker || !L.icon) return;
     var PIN = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMCIgaGVpZ2h0PSI0NCIgdmlld0JveD0iMCAwIDMwIDQ0Ij48cGF0aCBkPSJNMTUgMS4yQzcuOSAxLjIgMi4yIDYuOSAyLjIgMTRjMCA5LjYgMTIuOCAyOC44IDEyLjggMjguOFMyNy44IDIzLjYgMjcuOCAxNEMyNy44IDYuOSAyMi4xIDEuMiAxNSAxLjJ6IiBmaWxsPSIjZTAzMTMxIiBzdHJva2U9IiM4YzFmMWYiIHN0cm9rZS13aWR0aD0iMS42IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGNpcmNsZSBjeD0iMTUiIGN5PSIxMC42IiByPSIzLjciIGZpbGw9IiNmZmZmZmYiLz48cGF0aCBkPSJNMTUgMTUuNmMtNC4yIDAtNi44IDIuNS02LjggNS4zIDAgLjcuNSAxLjIgMS4yIDEuMmgxMS4yYy43IDAgMS4yLS41IDEuMi0xLjIgMC0yLjgtMi42LTUuMy02LjgtNS4zeiIgZmlsbD0iI2ZmZmZmZiIvPjwvc3ZnPg==";
-    L.Icon.Default.mergeOptions({
-      iconUrl: PIN, iconRetinaUrl: PIN, shadowUrl: null,
+    var ghim = L.icon({
+      iconUrl: PIN, iconRetinaUrl: PIN,
       iconSize: [30,44], iconAnchor: [15,43], popupAnchor: [0,-38]
     });
+    L.Marker.prototype.options.icon = ghim;
+    if(L.Icon && L.Icon.Default){ L.Icon.Default.imagePath = ""; }
   })();
 </script>
   <script src="vendor/jszip.min.js"></script>
@@ -3073,16 +3076,19 @@ function applyMapOperator(){
   // Cac file .js phu (co thi nap, khong co thi thoi) - khong phai loi
   var TUY_CHON = /(khac_bts|khac|bts_layers|[a-z0-9_]+_bts)\.js(\?|$)/i;
   window.addEventListener('error', function(e){
-    if(e && e.target && e.target.tagName === 'SCRIPT'){
-      var src = e.target.src || '';
-      // trang da tu xu ly bang onerror rieng -> bo qua
-      if(e.target.onerror) return;
-      // file du lieu nha mang dat them, khong bat buoc -> bo qua
-      if(TUY_CHON.test(src)) return;
+    var t = e && e.target;
+    // Loi tai tai nguyen (script, anh, css): chi bao khi la thu vien bat buoc
+    if(t && t.tagName){
+      if(t.tagName !== 'SCRIPT') return;      // anh/css hong -> khong dung banner
+      if(t.onerror) return;                   // trang da tu xu ly
+      var src = t.src || '';
+      if(TUY_CHON.test(src)) return;          // file du lieu them, khong bat buoc
       banner('khong tai duoc ' + (src || 'script'));
       return;
     }
-    banner((e && e.message) ? e.message : 'khong xac dinh');
+    // Loi JS that su: chi bao khi co noi dung ro rang
+    if(!e || !e.message) return;
+    banner(e.message);
   }, true);
   window.addEventListener('load', function(){
     if(!window.L){
