@@ -575,9 +575,45 @@ var controlPanel  = document.getElementById("controlPanel");
 // ============================================================
 window.onload = function() {
   map = L.map("map").setView([16.047, 108.206], 6);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "&copy; OpenStreetMap contributors"
-  }).addTo(map);
+  // ── Anh nen ban do: co nhieu nguon du phong ─────────────────
+  // Neu may chu dau khong tai duoc (bi chan, mang chap chon) thi tu
+  // chuyen sang nguon ke tiep. Hai nguon dau cung kieu ve OSM nen
+  // nhin y het nhau, giao dien khong doi.
+  (function(){
+    var NGUON = [
+      { url:"https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+        opt:{ maxZoom:19, attribution:"&copy; OpenStreetMap contributors" } },
+      { url:"https://tile.openstreetmap.de/{z}/{x}/{y}.png",
+        opt:{ maxZoom:18, attribution:"&copy; OpenStreetMap contributors" } },
+      { url:"https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+        opt:{ maxZoom:19, subdomains:"abcd",
+              attribution:"&copy; OpenStreetMap contributors, &copy; CARTO" } }
+    ];
+    var i = 0, lop = null, loi = 0, xong = false;
+
+    function dung(){
+      if (i >= NGUON.length) {
+        if (window.__tcBanner) {
+          window.__tcBanner("khong tai duoc anh nen ban do - kiem tra ket noi mang.");
+        }
+        return;
+      }
+      var n = NGUON[i];
+      loi = 0;
+      lop = L.tileLayer(n.url, n.opt).addTo(map);
+      lop.on("tileload", function(){ xong = true; });
+      lop.on("tileerror", function(){
+        if (xong) return;              // da tai duoc anh -> loi le te, bo qua
+        loi++;
+        if (loi >= 4) {                // nguon nay hong -> doi nguon khac
+          try { map.removeLayer(lop); } catch(e){}
+          i++;
+          dung();
+        }
+      });
+    }
+    dung();
+  })();
   markersLayer = L.layerGroup().addTo(map);
   btsLayer     = L.layerGroup().addTo(map);
   if (localStorage.getItem("darkMode") === "true") {
