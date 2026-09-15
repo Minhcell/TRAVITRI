@@ -1,0 +1,3094 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TRA CELL</title>
+  <meta name="theme-color" content="#0e1116"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon-192.png"/>
+  <!-- Ban dong goi trong APK: khong dung service worker, file da nam san trong may -->
+  <link rel="stylesheet" href="vendor/leaflet.css"/>
+  <script src="vendor/leaflet.js"></script>
+  <script>
+  // Ghim mac dinh ve bang SVG nhung thang trong trang -> khong can file anh ngoai
+  if(window.L&&L.Icon&&L.Icon.Default){
+    L.Icon.Default.mergeOptions({
+      iconUrl:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNSIgaGVpZ2h0PSI0MSIgdmlld0JveD0iMCAwIDI1IDQxIj48cGF0aCBkPSJNMTIuNSAwLjVDNS44NyAwLjUgMC41IDUuODcgMC41IDEyLjVjMCA5LjEgMTIgMjggMTIgMjhzMTItMTguOSAxMi0yOEMyNC41IDUuODcgMTkuMTMgMC41IDEyLjUgMC41eiIgZmlsbD0iIzJiODJjYiIgc3Ryb2tlPSIjMTc1MjdhIiBzdHJva2Utd2lkdGg9IjEiLz48Y2lyY2xlIGN4PSIxMi41IiBjeT0iMTIuNSIgcj0iNC42IiBmaWxsPSIjZmZmZmZmIi8+PC9zdmc+",
+      iconRetinaUrl:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNSIgaGVpZ2h0PSI0MSIgdmlld0JveD0iMCAwIDI1IDQxIj48cGF0aCBkPSJNMTIuNSAwLjVDNS44NyAwLjUgMC41IDUuODcgMC41IDEyLjVjMCA5LjEgMTIgMjggMTIgMjhzMTItMTguOSAxMi0yOEMyNC41IDUuODcgMTkuMTMgMC41IDEyLjUgMC41eiIgZmlsbD0iIzJiODJjYiIgc3Ryb2tlPSIjMTc1MjdhIiBzdHJva2Utd2lkdGg9IjEiLz48Y2lyY2xlIGN4PSIxMi41IiBjeT0iMTIuNSIgcj0iNC42IiBmaWxsPSIjZmZmZmZmIi8+PC9zdmc+",
+      shadowUrl:null, iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34]
+    });
+  }
+</script>
+  <script src="vendor/jszip.min.js"></script>
+  <script src="mobifone_bts.js"></script>
+  <script>
+  /* Tự nạp các file BTS nhà mạng đặt cùng thư mục — KHÔNG cần sửa HTML.
+     Chỉ cần copy file *_bts.js vào thư mục là tự hiện sau khi tải lại trang. */
+  (function(){
+    var files=['vinaphone_bts.js','viettel_bts.js','vietnamobile_bts.js','khac_bts.js','khac.js','bts_layers.js'];
+    files.forEach(function(f){
+      var s=document.createElement('script'); s.src=f; s.async=false;
+      s.onload=function(){ if(window.BTSOverlay&&window.BTSOverlay.reload) window.BTSOverlay.reload(); };
+      s.onerror=function(){ /* file không tồn tại → bỏ qua */ };
+      document.head.appendChild(s);
+    });
+  })();
+  </script>
+  <script>/* Ranh giới hành chính Đồng Nai + Bình Phước (point-in-polygon) */
+  window.PROVINCE_BOUNDS=(window.PROVINCE_BOUNDS||{});window.PROVINCE_BOUNDS.dongnai={"bbox":[106.4108,10.579,107.5769,12.2975],"rings":[[[107.36995,11.54894],[107.37315,11.55068],[107.36906,11.55861],[107.37908,11.54139],[107.37652,11.52418],[107.36835,11.51705],[107.3749,11.51543],[107.38569,11.52105],[107.3866,11.52595],[107.40253,11.52977],[107.41014,11.52814],[107.42006,11.51139],[107.42835,11.51865],[107.43418,11.51237],[107.44174,11.51673],[107.44149,11.50997],[107.45312,11.50169],[107.45525,11.49177],[107.47226,11.47779],[107.46145,11.4722],[107.46278,11.46352],[107.45036,11.45771],[107.44664,11.44825],[107.43026,11.43917],[107.43064,11.42537],[107.4426,11.43148],[107.44677,11.42755],[107.44427,11.41935],[107.45409,11.42019],[107.4543,11.43324],[107.45975,11.43094],[107.47515,11.43648],[107.48859,11.42693],[107.48808,11.39824],[107.49903,11.39516],[107.5045,11.38279],[107.51344,11.38403],[107.5178,11.37042],[107.52404,11.3693],[107.53534,11.35489],[107.54451,11.3654],[107.53507,11.32495],[107.51809,11.31013],[107.52375,11.295],[107.51874,11.28482],[107.52349,11.25242],[107.5169,11.25205],[107.50544,11.23606],[107.49698,11.24222],[107.49937,11.22082],[107.48673,11.22235],[107.48824,11.2157],[107.47835,11.20938],[107.48424,11.20543],[107.48286,11.20106],[107.47334,11.20078],[107.48041,11.19044],[107.4719,11.19323],[107.47082,11.17886],[107.46,11.1756],[107.46162,11.16672],[107.45452,11.15901],[107.45736,11.15054],[107.44505,11.14932],[107.44256,11.1394],[107.43458,11.13688],[107.4384,11.12608],[107.44453,11.12484],[107.45451,11.11236],[107.44324,11.08459],[107.43704,11.08915],[107.43054,11.08672],[107.4297,11.07898],[107.42278,11.07639],[107.42535,11.06335],[107.41649,11.05067],[107.40006,11.05351],[107.39457,11.04969],[107.4067,11.0426],[107.42105,11.04206],[107.42165,11.03684],[107.42952,11.03321],[107.4385,11.03316],[107.47312,11.0073],[107.50471,11.01389],[107.53296,10.9901],[107.5373,10.97785],[107.54225,10.97808],[107.5599,10.9379],[107.5599,10.86814],[107.57691,10.83552],[107.5735,10.81452],[107.55545,10.79552],[107.52455,10.7745],[107.49571,10.76823],[107.48344,10.77047],[107.47281,10.79302],[107.45806,10.7913],[107.45409,10.80205],[107.44497,10.80428],[107.42634,10.78647],[107.42029,10.77243],[107.40992,10.77451],[107.40234,10.76995],[107.38181,10.74934],[107.3756,10.73644],[107.36089,10.72838],[107.3583,10.71495],[107.34808,10.70589],[107.3535,10.69809],[107.34944,10.68965],[107.35212,10.67819],[107.33232,10.6779],[107.31831,10.66895],[107.29937,10.68635],[107.30746,10.69358],[107.30154,10.70155],[107.30602,10.71374],[107.30067,10.71917],[107.30522,10.72787],[107.30036,10.75468],[107.24695,10.7558],[107.23086,10.76402],[107.22277,10.75738],[107.20691,10.75895],[107.20653,10.77556],[107.1882,10.77211],[107.15389,10.7444],[107.13619,10.74516],[107.1393,10.73247],[107.14602,10.7302],[107.14381,10.72406],[107.13894,10.72786],[107.13973,10.70947],[107.133,10.68511],[107.10178,10.66297],[107.0965,10.65195],[107.047,10.65763],[107.01362,10.64365],[107.01611,10.63198],[107.00651,10.63718],[106.99922,10.63442],[106.99828,10.6217],[107.00833,10.61275],[106.99096,10.60458],[106.98385,10.57901],[106.92118,10.60977],[106.91224,10.6078],[106.90481,10.62271],[106.88186,10.64795],[106.87306,10.64819],[106.86119,10.63711],[106.84255,10.63778],[106.83773,10.62808],[106.82552,10.62827],[106.81324,10.64162],[106.80765,10.6567],[106.77347,10.67744],[106.75573,10.69528],[106.75173,10.71772],[106.77003,10.74447],[106.80146,10.76074],[106.81686,10.77996],[106.82577,10.77699],[106.82512,10.75987],[106.84567,10.77513],[106.85382,10.77401],[106.8629,10.76537],[106.87274,10.76636],[106.87435,10.77217],[106.86461,10.78869],[106.88228,10.81009],[106.84776,10.85934],[106.85089,10.87631],[106.83821,10.90309],[106.83172,10.90694],[106.81731,10.90398],[106.81105,10.91867],[106.78965,10.92482],[106.79065,10.93256],[106.77135,10.94377],[106.77076,10.95162],[106.76324,10.95229],[106.76247,10.96402],[106.77185,10.96559],[106.77477,10.95929],[106.79612,10.97184],[106.7823,10.98699],[106.77486,11.00607],[106.7855,11.01804],[106.81218,11.02983],[106.81142,11.04122],[106.79924,11.05326],[106.8007,11.05877],[106.82705,11.06488],[106.84131,11.03854],[106.87437,11.0198],[106.89456,11.02765],[106.90877,11.02251],[106.91302,11.04184],[106.92297,11.04738],[106.92329,11.05685],[106.93353,11.06485],[106.94219,11.0567],[106.94859,11.0602],[106.95272,11.07171],[106.94545,11.07713],[106.94703,11.08888],[106.95884,11.09978],[106.95803,11.10684],[106.96589,11.10996],[106.95395,11.12866],[106.95756,11.13462],[106.9546,11.1409],[106.96589,11.14277],[106.96636,11.14779],[106.95646,11.15276],[106.9541,11.16373],[106.94164,11.16775],[106.94594,11.17679],[106.93321,11.18907],[106.9232,11.18724],[106.91974,11.19309],[106.9066,11.19237],[106.907,11.20375],[106.90133,11.2088],[106.91803,11.21965],[106.91332,11.23031],[106.91872,11.23555],[106.91156,11.23622],[106.91126,11.24166],[106.93174,11.24526],[106.92543,11.2531],[106.9282,11.26517],[106.92489,11.27056],[106.93359,11.27934],[106.93368,11.28785],[106.94234,11.29318],[106.93856,11.30815],[106.94757,11.30862],[106.95422,11.30156],[106.9676,11.31809],[106.98384,11.31295],[106.98624,11.32322],[106.97883,11.33254],[106.99348,11.33234],[106.99252,11.3278],[106.99838,11.32665],[106.99862,11.33367],[107.01398,11.34062],[107.01009,11.34839],[107.0177,11.34856],[107.02354,11.35509],[107.03117,11.35393],[107.04109,11.36528],[107.03593,11.3711],[107.04058,11.37627],[107.05228,11.37328],[107.06027,11.37778],[107.05712,11.38167],[107.06115,11.38824],[107.05582,11.39483],[107.07634,11.41827],[107.06519,11.43083],[107.06922,11.44863],[107.08343,11.45956],[107.0847,11.46616],[107.09578,11.47024],[107.09766,11.48148],[107.11373,11.48107],[107.13211,11.50113],[107.33642,11.54671],[107.3462,11.54333],[107.34839,11.55359],[107.35725,11.56004],[107.36007,11.58221],[107.36649,11.57363],[107.36135,11.56891],[107.36681,11.56097],[107.36054,11.55554],[107.36995,11.54894]],[[107.2046,12.29749],[107.22744,12.16043],[107.22842,12.13367],[107.2246,12.12654],[107.22856,12.11587],[107.24058,12.11433],[107.23177,12.09859],[107.23364,12.09023],[107.22921,12.08777],[107.23385,12.04666],[107.22971,12.02861],[107.24219,12.03928],[107.24555,12.03475],[107.24314,12.02587],[107.24884,12.02659],[107.2553,12.01932],[107.27626,12.01345],[107.29129,12.02112],[107.29525,12.00931],[107.32334,12.00407],[107.33815,11.99047],[107.35108,11.96823],[107.3522,11.95438],[107.35667,11.95187],[107.3519,11.94692],[107.35286,11.9394],[107.38347,11.92033],[107.40249,11.88938],[107.40621,11.86743],[107.41939,11.86557],[107.4262,11.85928],[107.42712,11.84614],[107.42086,11.84335],[107.41797,11.83158],[107.40512,11.81775],[107.40955,11.80673],[107.39343,11.79496],[107.39836,11.77762],[107.39532,11.77112],[107.39069,11.76678],[107.38711,11.77276],[107.3742,11.77092],[107.36313,11.76115],[107.35649,11.76202],[107.35337,11.753],[107.32657,11.74974],[107.3158,11.74116],[107.30163,11.73966],[107.29684,11.7298],[107.28845,11.72862],[107.28396,11.69866],[107.27872,11.6928],[107.28516,11.68675],[107.26602,11.66086],[107.27301,11.65014],[107.27038,11.63787],[107.28561,11.63251],[107.30434,11.6177],[107.30071,11.60678],[107.30685,11.5993],[107.29741,11.58471],[107.30068,11.5775],[107.312,11.57198],[107.31053,11.56842],[107.30268,11.57081],[107.30864,11.55843],[107.31245,11.55328],[107.33254,11.55415],[107.33642,11.54671],[107.14823,11.50589],[107.13211,11.50113],[107.11373,11.48107],[107.09766,11.48148],[107.09578,11.47024],[107.0847,11.46616],[107.08343,11.45956],[107.0683,11.44699],[107.06519,11.43083],[107.07634,11.41827],[107.05582,11.39483],[107.06115,11.38824],[107.05712,11.38167],[107.06027,11.37778],[107.05228,11.37328],[107.04058,11.37627],[107.03593,11.3711],[107.04109,11.36528],[107.03117,11.35393],[107.02354,11.35509],[107.0177,11.34856],[107.01009,11.34839],[107.01398,11.34062],[106.99862,11.33367],[106.99838,11.32665],[106.99252,11.3278],[106.99348,11.33234],[106.97883,11.33254],[106.98597,11.32422],[106.98459,11.31341],[106.9676,11.31809],[106.95422,11.30156],[106.94602,11.30922],[106.93724,11.30621],[106.95279,11.32791],[106.95115,11.33795],[106.93918,11.35181],[106.91956,11.35107],[106.91674,11.35629],[106.90724,11.35272],[106.90159,11.34117],[106.88606,11.34136],[106.8702,11.32179],[106.87503,11.30795],[106.8569,11.31542],[106.85552,11.32832],[106.86381,11.34063],[106.85715,11.34592],[106.85874,11.36219],[106.85435,11.37639],[106.84061,11.37516],[106.82751,11.38494],[106.81318,11.37594],[106.78512,11.38106],[106.7859,11.3986],[106.77402,11.39875],[106.76905,11.40797],[106.77054,11.42633],[106.78925,11.43218],[106.80665,11.45275],[106.80368,11.4823],[106.79723,11.49159],[106.75405,11.47658],[106.75006,11.46897],[106.7563,11.4502],[106.74209,11.44067],[106.74067,11.43279],[106.72665,11.43214],[106.72649,11.42392],[106.71812,11.42233],[106.71893,11.41537],[106.70959,11.40642],[106.70976,11.39979],[106.70431,11.39662],[106.69757,11.40354],[106.68559,11.39453],[106.67456,11.40073],[106.67913,11.37609],[106.67438,11.35465],[106.61769,11.36278],[106.61364,11.38819],[106.60035,11.38742],[106.56492,11.37104],[106.55289,11.37386],[106.5393,11.38792],[106.54839,11.40695],[106.54132,11.4265],[106.56512,11.44477],[106.57337,11.45734],[106.55731,11.48457],[106.54249,11.4679],[106.49228,11.49794],[106.43635,11.50125],[106.42515,11.49421],[106.42335,11.49889],[106.43422,11.53948],[106.44341,11.54632],[106.45451,11.54213],[106.46915,11.54425],[106.47975,11.55005],[106.49083,11.56973],[106.4831,11.59557],[106.48628,11.60368],[106.46418,11.62281],[106.46411,11.63922],[106.45032,11.66234],[106.45318,11.69073],[106.43756,11.70509],[106.41447,11.76432],[106.43632,11.80994],[106.44847,11.82537],[106.43856,11.8394],[106.44063,11.85753],[106.44771,11.86665],[106.46593,11.8669],[106.41085,11.97555],[106.4316,11.97217],[106.4428,11.9873],[106.4554,11.98921],[106.46592,11.98252],[106.46946,11.97353],[106.49254,11.96909],[106.5175,11.98102],[106.52626,11.97892],[106.53201,11.97327],[106.53061,11.96885],[106.62706,11.97501],[106.63471,11.96054],[106.64156,11.97495],[106.64718,11.96408],[106.65965,11.96475],[106.64941,11.98001],[106.65517,11.98904],[106.67059,11.97684],[106.67663,11.97878],[106.68563,11.96377],[106.69514,11.96388],[106.69964,11.97211],[106.70349,11.96566],[106.71637,11.97202],[106.72144,11.96908],[106.73933,11.99944],[106.74596,12.00133],[106.74707,12.02144],[106.75298,12.02301],[106.78054,12.07141],[106.79374,12.08227],[106.81109,12.07954],[106.82231,12.08345],[106.83364,12.07283],[106.84567,12.07376],[106.85365,12.06717],[106.88574,12.07341],[106.89829,12.06633],[106.91124,12.06737],[106.91758,12.06148],[106.94552,12.06611],[106.96722,12.08275],[106.99455,12.09503],[107.00218,12.09357],[107.00853,12.103],[107.00205,12.10899],[107.01288,12.11105],[107.00414,12.11491],[107.01495,12.12139],[107.01806,12.11751],[107.02301,12.12724],[107.02629,12.12119],[107.04694,12.13361],[107.06097,12.15773],[107.07899,12.16278],[107.07977,12.16841],[107.07044,12.17626],[107.07403,12.18694],[107.09244,12.18124],[107.10057,12.20675],[107.12034,12.22415],[107.13759,12.23073],[107.13532,12.24126],[107.14466,12.25085],[107.15099,12.2753],[107.17592,12.2806],[107.19129,12.29457],[107.2046,12.29749]]]};
+  </script>
+  <script src="vendor/mammoth.browser.min.js"></script>
+  <script src="vendor/xlsx.full.min.js"></script>
+  <style>
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;padding:0;font-family:Arial,sans-serif}
+    #map{height:100vh;width:100%}
+
+    #togglePanel{
+      position:absolute;top:15px;left:15px;
+      background:#e6e9ec;
+      color:#243141;border:1px solid #cdd4da;padding:10px 14px;font-weight:bold;
+      border-radius:10px;font-size:12px;z-index:1001;cursor:pointer
+    }
+    #darkModeToggle{
+      position:absolute;top:15px;right:15px;
+      background:#e6e9ec;color:#243141;border:1px solid #cdd4da;
+      border-radius:50%;cursor:pointer;font-size:18px;z-index:1001;
+      width:40px;height:40px;display:flex;align-items:center;justify-content:center;
+      transition:all 0.3s ease
+    }
+    #darkModeToggle:hover{background:#dde1e6}
+    #addApiBtn{
+      position:absolute;top:15px;right:65px;z-index:1001;
+      background:#e6e9ec;color:#243141;border:1px solid #cdd4da;border-radius:20px;
+      height:40px;padding:0 14px;cursor:pointer;font-size:13px;font-weight:600
+    }
+    #addApiBtn:hover{background:#dde1e6}
+    body.dark-mode #togglePanel,body.dark-mode #addApiBtn{background:#3b4046;color:#e8eaed;border-color:#4b5158}
+    #apiIndicator{
+      position:absolute;top:65px;right:15px;
+      font-size:12px;font-style:italic;color:#e91e63;z-index:1001
+    }
+
+    body.dark-mode{background:#1a1a1a;color:#e0e0e0}
+    body.dark-mode #map{filter:brightness(0.8) contrast(1.2)}
+    body.dark-mode #controlPanel{background:rgba(30,30,30,0.97);color:#e0e0e0}
+    body.dark-mode textarea{background:#333;color:#e0e0e0;border-color:#555}
+    body.dark-mode #results{background:#2a2a2a;border-color:#555;color:#e0e0e0}
+    body.dark-mode .result-item{background:#2d2d2d}
+    body.dark-mode .result-item:hover{background:#333}
+    body.dark-mode .result-text{color:#f0f0f0}
+    body.dark-mode .duplicate-section{background:#2a2a2a;border-color:#555}
+    body.dark-mode .duplicate-list{background:#333;border-color:#555;color:#e0e0e0}
+    body.dark-mode .import-status.success{background:#1b3e1b;color:#81c784;border-color:#4caf50}
+    body.dark-mode .import-status.error{background:#3e1b1b;color:#e57373;border-color:#f44336}
+    body.dark-mode .import-status.warning{background:#3e2e1b;color:#ffb74d;border-color:#ff9800}
+    body.dark-mode #darkModeToggle{background:#3b4046;color:#e8eaed;border-color:#4b5158}
+    body.dark-mode .bts-result-box{background:linear-gradient(135deg,#1a2a3a,#1e2e3e);border-color:#2196F3}
+    body.dark-mode .bts-result-box h4{color:#64b5f6}
+    body.dark-mode .group-title{background:#1a2535;color:#64b5f6}
+
+    #controlPanel{
+      position:fixed;bottom:0;left:0;width:100%;height:68vh;
+      background:#fff;box-shadow:0 -6px 20px rgba(0,0,0,0.25);
+      padding:15px 15px 20px;overflow-y:auto;
+      transform:translateY(100%);transition:transform 0.35s ease;
+      z-index:1000;border-top-left-radius:25px;border-top-right-radius:25px
+    }
+    #controlPanel.open{transform:translateY(0)}
+    .drag-handle{width:50px;height:5px;background:#ccc;border-radius:10px;margin:0 auto 12px}
+    .back-button{
+      background:#e6e9ec;color:#243141;border:1px solid #cdd4da;padding:6px 12px;
+      border-radius:8px;cursor:pointer;font-size:11px;font-weight:bold;margin-bottom:12px
+    }
+    #panelTitle{text-align:center;font-size:18px;margin:0 0 12px}
+
+    button{
+      position:relative;border-radius:10px;cursor:pointer;
+      transition:all 0.15s ease;
+      box-shadow:0 3px 0 rgba(0,0,0,0.10),0 4px 9px rgba(0,0,0,0.10)
+    }
+    button:hover{transform:translateY(-1px);box-shadow:0 4px 0 rgba(0,0,0,0.10),0 6px 12px rgba(0,0,0,0.14)}
+    button:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,0.10),0 2px 5px rgba(0,0,0,0.10)}
+    .button-row{display:flex;gap:6px;margin-bottom:8px}
+    /* ===== NUT TRA: mot mau xam nhe, don gian, de nhin ===== */
+    .button-row button,
+    .button-row button.btn-green,
+    .button-row button.btn-red,
+    .button-row button.btn-orange,
+    .button-row button.btn-purple{
+      flex:1;height:42px;font-size:13px;font-weight:bold;
+      background:#e6e9ec;color:#243141;border:1px solid #cdd4da}
+    .button-row button:hover{background:#dde1e6}
+    body.dark-mode .button-row button,
+    body.dark-mode .button-row button.btn-green,
+    body.dark-mode .button-row button.btn-red,
+    body.dark-mode .button-row button.btn-orange,
+    body.dark-mode .button-row button.btn-purple{
+      background:#3b4046;color:#e8eaed;border-color:#4b5158}
+    body.dark-mode .button-row button:hover{background:#454b52}
+
+    label{font-size:13px}
+    textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #ccc;font-size:13px;resize:vertical;margin-bottom:6px}
+    .checkbox-row{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 10px}
+    .checkbox-row label{font-size:13px;cursor:pointer;user-select:none;display:flex;align-items:center;gap:5px}
+    .section-title{font-size:12px;font-weight:bold;color:#666;margin:10px 0 5px;text-transform:uppercase;letter-spacing:0.5px}
+
+    #results{margin-top:10px;max-height:340px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:10px;background:#fafafa;padding:6px}
+    .result-item{
+      background:#fff;border-radius:12px;padding:10px 12px;margin-bottom:8px;
+      box-shadow:0 3px 8px rgba(0,0,0,0.1);cursor:pointer;transition:all 0.2s ease;
+      display:flex;align-items:flex-start;gap:8px
+    }
+    .result-item:hover{transform:scale(1.01);background:#f0f7ff}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .result-item{animation:fadeIn 0.25s ease}
+    .result-text{flex:1;font-size:12px;line-height:1.5;color:#222;white-space:pre-line}
+    .result-actions{display:flex;flex-direction:column;gap:4px;align-items:center}
+    .g-button{
+      display:inline-flex;align-items:center;justify-content:center;
+      width:28px;height:28px;border-radius:6px;background:#e6e9ec;
+      border:1px solid #cdd4da;
+      color:#243141;font-weight:bold;text-decoration:none;font-size:12px;
+      box-shadow:0 1px 3px rgba(0,0,0,0.2);flex-shrink:0
+    }
+
+    .group-title{
+      font-weight:bold;font-size:12px;color:#1565c0;
+      margin:10px 0 4px;padding:5px 10px;
+      background:#e3f2fd;border-radius:8px;border-left:3px solid #1565c0
+    }
+    .bts-result-box{
+      background:linear-gradient(135deg,#e3f2fd,#f8fbff);
+      border:2px solid #1976d2;border-radius:14px;
+      padding:12px 14px;margin-bottom:8px;
+      box-shadow:0 4px 14px rgba(25,118,210,0.18);cursor:pointer
+    }
+    .bts-result-box:hover{box-shadow:0 6px 18px rgba(25,118,210,0.28)}
+    .bts-result-box h4{margin:0 0 6px;color:#1565c0;font-size:13px}
+    .direction-badge{
+      display:inline-block;background:#1565c0;color:white;
+      border-radius:16px;padding:3px 12px;font-size:12px;font-weight:bold;margin-top:5px
+    }
+
+    .import-status{font-size:12px;margin-top:6px;padding:6px;border-radius:6px;display:none}
+    .import-status.success{background:#e8f5e8;color:#2e7d2e;border:1px solid #4CAF50}
+    .import-status.error{background:#ffebee;color:#c62828;border:1px solid #f44336}
+    .import-status.warning{background:#fff3e0;color:#e65100;border:1px solid #ff9800}
+
+    .duplicate-section{margin-top:8px;padding:8px;border:1px solid #e0e0e0;border-radius:8px;background:#f9f9f9;display:none}
+    .duplicate-section.show{display:block}
+    .duplicate-title{font-weight:bold;font-size:12px;color:#d32f2f;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+    .duplicate-list{max-height:100px;overflow-y:auto;font-size:11px;color:#555;background:white;padding:5px;border-radius:4px;border:1px solid #ddd}
+    .duplicate-count{background:#f44336;color:white;padding:1px 6px;border-radius:8px;font-size:11px;font-weight:bold}
+    .filter-actions{margin-top:6px;display:flex;gap:6px}
+    .filter-btn{padding:5px 9px;font-size:11px;border:none;border-radius:6px;cursor:pointer;font-weight:bold}
+    .remove-dup,.keep-dup{background:#e6e9ec;color:#243141;border:1px solid #cdd4da}
+
+    /* Popup custom styles */
+    .cell-popup{min-width:220px;font-size:12px;line-height:1.7}
+    .cell-popup b{color:#1565c0}
+    .cell-popup .popup-title{font-size:14px;font-weight:bold;color:#e53935;margin-bottom:6px;border-bottom:1px solid #e0e0e0;padding-bottom:4px}
+    .cell-popup .popup-sub{font-size:11px;color:#555;margin-top:8px;border-top:1px dashed #e0e0e0;padding-top:6px}
+    .cell-popup .popup-sub-title{font-weight:bold;color:#555;margin-bottom:3px;font-size:11px}
+    .cell-popup .sub-cell-row{background:#f5f5f5;border-radius:6px;padding:4px 6px;margin-bottom:4px;font-size:11px}
+    .cell-popup .dir-badge{display:inline-block;background:#e53935;color:white;border-radius:10px;padding:2px 10px;font-size:12px;font-weight:bold;margin:4px 0}
+    .cell-popup a{color:#2196F3;font-weight:bold;text-decoration:none}
+    .bts-popup{min-width:200px;font-size:12px;line-height:1.7}
+    .bts-popup .bts-title{font-size:14px;font-weight:bold;color:#7b1fa2;margin-bottom:6px}
+    .bts-popup a{color:#2196F3;font-weight:bold;text-decoration:none}
+    body.dark-mode #advOperator{background:#333;color:#e0e0e0;border-color:#555}
+    body.dark-mode .adv-param-panel{background:#1a2535;border-color:#1565c0}
+    body.dark-mode #advParamPanel{background:#1a2535;border-color:#1565c0}
+    body.dark-mode #advParamPanel input{background:#333;color:#e0e0e0;border-color:#555}
+    body.dark-mode #advParamPanel label{color:#90caf9}
+    body.dark-mode #advParamPanel .section-title{color:#64b5f6}
+    .adv-result-box{
+      background:linear-gradient(135deg,#e8f5e9,#f1f8e9);
+      border:2px solid #43a047;border-radius:12px;
+      padding:10px 12px;margin-bottom:8px;
+      box-shadow:0 3px 10px rgba(67,160,71,0.2);
+    }
+    body.dark-mode .adv-result-box{background:linear-gradient(135deg,#1b3a1b,#1e2e1e);border-color:#43a047}
+    .adv-badge{display:inline-block;background:#43a047;color:white;border-radius:14px;padding:3px 12px;font-size:12px;font-weight:bold;margin:3px 3px 3px 0}
+    .pci-badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:bold;color:white;margin-top:4px}
+    .signal-bar{height:8px;border-radius:4px;margin-top:3px;transition:width 0.4s}
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <button id="togglePanel">📡 TRA CELL</button>
+  <button id="darkModeToggle" onclick="toggleDarkMode()">🌙</button>
+  <button id="addApiBtn" onclick="promptAddApi()" title="Thêm API tra cell">➕ API</button>
+  <div id="apiIndicator"></div>
+
+  <div id="controlPanel">
+    <div class="drag-handle"></div>
+    <button class="back-button" onclick="closePanel()">← Đóng</button>
+    <h2 id="panelTitle">📡 Tra cứu Cell</h2>
+
+    <label>Nhập Cell (hỗ trợ nhiều định dạng):</label>
+    <textarea id="cellInput" rows="3" placeholder="Ví dụ: 01.65000.564383&#10;Tự động tra cả nhóm đuôi 1,2,3 hoặc 4,5,6 hoặc 7,8,9"></textarea>
+
+    <div class="checkbox-row">
+      <label><input type="checkbox" id="umts"> UMTS</label>
+      <label><input type="checkbox" id="lte"> LTE</label>
+      <label><input type="checkbox" id="nbiot"> NBIOT</label>
+      <label><input type="checkbox" id="nr"> NR</label>
+      <label><input type="checkbox" id="auto" checked> Tự động</label>
+    </div>
+
+    <!-- ===== THÔNG SỐ NÂNG CAO (từ ảnh chụp màn hình) ===== -->
+    <div class="section-title" id="advParamTitle" style="cursor:pointer;user-select:none" onclick="toggleAdvPanel()">
+      📶 Thông số nâng cao (PCI/TA/eNB/RSRP...) <span id="advArrow">▶</span>
+    </div>
+    <div id="advParamPanel" style="display:none;background:#f0f7ff;border-radius:10px;padding:10px;margin-bottom:8px;border:1px solid #90caf9">
+      <div style="font-size:11px;color:#1565c0;margin-bottom:8px;font-style:italic">
+        📌 Nhập thông số từ thiết bị → tự động tra cell + tính hướng/khoảng cách BTS.<br>
+        Có thể nhập thông số thay cho ô cell phía trên, hoặc dùng song song.
+      </div>
+      <!-- Chọn nhà mạng để tính PCI đúng offset -->
+      <div style="margin-bottom:8px">
+        <label style="font-size:11px;font-weight:bold;color:#555">🏢 Nhà mạng (ảnh hưởng offset hướng sector)</label>
+        <select id="advOperator" style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:13px;margin-top:3px;background:#fff">
+          <option value="auto">📶 Tự động / Không rõ (chuẩn 3GPP)</option>
+          <option value="viettel">🔴 Viettel (MNC 04)</option>
+          <option value="mobifone">🔵 Mobifone (MNC 01)</option>
+          <option value="vinaphone">🟢 Vinaphone (MNC 02)</option>
+          <option value="vietnamobile">🟠 Vietnamobile (MNC 05)</option>
+          <option value="reddi">🟣 Reddi / Gmobile (MNC 07)</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+        <div>
+          <label style="font-size:11px;font-weight:bold;color:#555">MCC <span style="color:#1565c0">●</span> <span style="color:#888;font-weight:normal">(mặc định 452)</span></label>
+          <input type="number" id="advMCC" value="452" placeholder="452" style="width:100%;padding:5px;border-radius:6px;border:1px solid #ccc;font-size:12px;background:#f5f5f5;color:#888">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:bold;color:#555">MNC <span style="color:#1565c0">●</span></label>
+          <input type="number" id="advMNC" placeholder="VD: 05" style="width:100%;padding:5px;border-radius:6px;border:1px solid #ccc;font-size:12px">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:bold;color:#555">eNB ID <span style="color:#1565c0">●</span></label>
+          <input type="number" id="advENB" placeholder="VD: 30825" style="width:100%;padding:5px;border-radius:6px;border:1px solid #ccc;font-size:12px">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:bold;color:#555">CID (local) <span style="color:#1565c0">●</span></label>
+          <input type="number" id="advCID" placeholder="VD: 102" style="width:100%;padding:5px;border-radius:6px;border:1px solid #ccc;font-size:12px">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:bold;color:#555">TAC / LAC <span style="color:#1565c0">●</span></label>
+          <input type="number" id="advTAC" placeholder="VD: 4540" style="width:100%;padding:5px;border-radius:6px;border:1px solid #ccc;font-size:12px">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:bold;color:#555">PCI <span style="color:#e53935">★</span></label>
+          <input type="number" id="advPCI" placeholder="VD: 101 (0-503)" style="width:100%;padding:5px;border-radius:6px;border:1px solid #ccc;font-size:12px">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:bold;color:#555">TA (Timing Advance) <span style="color:#e53935">★</span></label>
+          <input type="number" id="advTA" placeholder="VD: 17" style="width:100%;padding:5px;border-radius:6px;border:1px solid #ccc;font-size:12px">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:bold;color:#555">RSRP (dBm)</label>
+          <input type="number" id="advRSRP" placeholder="VD: -105" style="width:100%;padding:5px;border-radius:6px;border:1px solid #ccc;font-size:12px">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:bold;color:#555">RSRQ (dB)</label>
+          <input type="number" id="advRSRQ" placeholder="VD: -10" style="width:100%;padding:5px;border-radius:6px;border:1px solid #ccc;font-size:12px">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:bold;color:#555">SNR (dB)</label>
+          <input type="number" id="advSNR" placeholder="VD: 4.0" style="width:100%;padding:5px;border-radius:6px;border:1px solid #ccc;font-size:12px">
+        </div>
+      </div>
+      <div style="font-size:11px;color:#666;margin-top:4px;padding:5px;background:#fff3e0;border-radius:6px;border-left:3px solid #ff9800">
+        💡 <b>● MCC</b> mặc định 452 (VN) | <b>● MNC+TAC+eNB+CID</b>: tự động tính Cell ID và tra cell luôn (không cần nhập ô trên)<br>
+        💡 <b>★ PCI</b>: PSS=PCI mod 3 → hướng sector theo nhà mạng | <b>★ TA</b>: ×78.125m = khoảng cách BTS<br>
+        💡 <b>RSRP</b> &gt;-80: Tốt | -80~-90: Khá | -90~-100: TB | -100~-110: Yếu | &lt;-110: Rất yếu
+      </div>
+    </div>
+    <!-- ===== END THÔNG SỐ NÂNG CAO ===== -->
+
+    <div class="section-title">🔍 Tra cứu</div>
+    <div class="button-row" style="align-items:center;gap:8px;flex-wrap:wrap;font-size:12px">
+      <span>🗺️ Bản đồ nhà mạng:</span>
+      <select id="mapOperatorSel" style="padding:5px;border-radius:6px" onchange="applyMapOperator()">
+        <option value="auto">Tự động (theo cell)</option>
+        <option value="1">MobiFone</option>
+        <option value="2">VinaPhone</option>
+        <option value="4">Viettel</option>
+        <option value="5">Vietnamobile</option>
+        <option value="all">Tất cả</option>
+      </select>
+    </div>
+    <div class="button-row">
+      <button onclick="searchCells()">Tra Cell + BTS</button>
+      <button class="btn-green" onclick="searchCellOnly()">Tra Cell</button>
+      <button class="btn-red" onclick="clearResults()">Xóa</button>
+    </div>
+    <div class="section-title">🎯 Giao quạt nhiều trạm (định vị thuê bao)</div>
+    <div class="button-row">
+      <button class="btn-purple" onclick="gomTramGiaoQuat()">➕ Gom trạm</button>
+      <button class="btn-orange" onclick="giaoQuatNhieuTram()">🎯 Giao quạt N trạm</button>
+      <button class="btn-red" onclick="xoaGiaoQuat()">🗑️ Xoá</button>
+    </div>
+    <div class="section-title">📡 Lớp BTS bản đồ (MobiFone + KML/KMZ/Excel)</div>
+    <div class="button-row" style="font-size:12px;align-items:center;gap:8px;flex-wrap:wrap">
+      <span>Nhà mạng của file:</span>
+      <select id="btsImportOperator" style="padding:5px;border-radius:6px">
+        <option value="1">MobiFone</option>
+        <option value="2">VinaPhone</option>
+        <option value="4">Viettel</option>
+        <option value="5">Vietnamobile</option>
+        <option value="0">Khác</option>
+      </select>
+    </div>
+    <div class="button-row">
+      <button class="btn-purple" onclick="importBTSFile()">📂 Import KML/KMZ/Excel</button>
+      <button class="btn-orange" onclick="exportBtsKml()">🌍 Xuất KML</button>
+    </div>
+    <div class="button-row">
+      <button class="btn-green" onclick="BTSOverlay&&BTSOverlay.exportBundleJs()">💾 Xuất .js nhúng</button>
+      <button class="btn-red" onclick="BTSOverlay&&BTSOverlay.clearSaved()">🗑️ Xoá lớp đã lưu</button>
+    </div>
+    <div class="button-row">
+      <button class="btn-purple" onclick="document.getElementById('btsAddJs').click()">➕ Thêm file .js (tỉnh mới)</button>
+      <input type="file" id="btsAddJs" accept=".js" multiple style="display:none" onchange="BTSOverlay&&BTSOverlay.addJsFiles(this.files);this.value='';">
+    </div>
+    <div class="button-row" style="font-size:12px;align-items:center;gap:10px;flex-wrap:wrap">
+      <label><input type="checkbox" id="btsShowSites" checked onchange="BTSOverlay&&BTSOverlay.setShowSites(this.checked)"> Hiện site</label>
+      <label><input type="checkbox" id="btsShowSectors" checked onchange="BTSOverlay&&BTSOverlay.setShowSectors(this.checked)"> Sector (zoom≥14)</label>
+      <label>Kiểu:
+        <select id="btsSectorShape" onchange="BTSOverlay&&BTSOverlay.setSectorShape(this.value)" style="font-size:11px;padding:2px 4px;border-radius:5px">
+          <option value="pattern">Búp sóng (pattern)</option>
+          <option value="wedge">Quạt</option>
+        </select>
+      </label>
+      <button class="btn-green" style="padding:4px 8px;font-size:11px" onclick="BTSOverlay&&BTSOverlay.clearFilter()">👁️ Hiện tất cả lớp</button>
+    </div>
+    <div id="btsStatus" style="font-size:11.5px;color:#888;margin:2px 0 4px"></div>
+    <input type="file" id="btsFileInput" accept=".kml,.kmz,.xlsx,.xls,.csv" style="display:none">
+
+    <div class="section-title">📁 Dữ liệu</div>
+    <div class="button-row">
+      <button class="btn-green" onclick="exportExcel()">Xuất Excel</button>
+      <button class="btn-orange" onclick="importFile()">Import File</button>
+    </div>
+    <div class="section-title">📊 Tra nhiều cell từ file (theo tiêu đề cột)</div>
+    <div class="button-row">
+      <button class="btn-purple" onclick="importBulkFile()">📊 Tra File → Ghim bản đồ</button>
+      <button class="btn-orange" onclick="openRouteGoogleMaps()">🗺️ Lộ trình Google Maps</button>
+    </div>
+    <input type="file" id="fileInputBulk" accept=".xlsx,.xls,.csv,.docx,.doc" style="display:none" multiple>
+    <div class="section-title">🕓 Lịch sử</div>
+    <div class="button-row">
+      <button class="btn-purple" onclick="showHistory()">Lịch sử</button>
+      <button class="btn-red" onclick="clearHistory()">Xóa lịch sử</button>
+    </div>
+
+    <input type="file" id="fileInput" accept=".txt,.docx,.doc,.xlsx,.xls,.csv" style="display:none" multiple>
+    <div id="importStatus" class="import-status"></div>
+
+    <div id="duplicateSection" class="duplicate-section">
+      <div class="duplicate-title">⚠️ Cell trùng lặp <span id="duplicateCount" class="duplicate-count">0</span></div>
+      <div id="duplicateList" class="duplicate-list"></div>
+      <div class="filter-actions">
+        <button class="filter-btn remove-dup" onclick="removeDuplicates()">🗑️ Xóa trùng</button>
+        <button class="filter-btn keep-dup" onclick="keepDuplicates()">📋 Giữ trùng</button>
+        <button class="filter-btn" onclick="hideDuplicateSection()" style="background:#888;color:white">✖ Ẩn</button>
+      </div>
+    </div>
+
+    <div id="results"></div>
+  </div>
+
+<!-- ============================================================
+     CELL-LOCATOR: giao quạt sector + vòng TA → heatmap vùng xác suất
+     (bản gọn, độc lập, không đụng biến toàn cục của tool)
+     ============================================================ -->
+<script>
+(function (g) {
+  'use strict';
+  var R = 6371000;
+  function rad(d){ return d*Math.PI/180; } function deg(x){ return x*180/Math.PI; }
+  function haversine(a,b,c,d){ var dla=rad(c-a),dlo=rad(d-b);
+    var s=Math.sin(dla/2)*Math.sin(dla/2)+Math.cos(rad(a))*Math.cos(rad(c))*Math.sin(dlo/2)*Math.sin(dlo/2);
+    return 2*R*Math.asin(Math.min(1,Math.sqrt(s))); }
+  function bearing(a,b,c,d){ var f1=rad(a),f2=rad(c),dl=rad(d-b);
+    var y=Math.sin(dl)*Math.cos(f2), x=Math.cos(f1)*Math.sin(f2)-Math.sin(f1)*Math.cos(f2)*Math.cos(dl);
+    return (deg(Math.atan2(y,x))+360)%360; }
+  function destPoint(a,b,br,dist){ var d=dist/R,t=rad(br),f1=rad(a),l1=rad(b);
+    var f2=Math.asin(Math.sin(f1)*Math.cos(d)+Math.cos(f1)*Math.sin(d)*Math.cos(t));
+    var l2=l1+Math.atan2(Math.sin(t)*Math.sin(d)*Math.cos(f1),Math.cos(d)-Math.sin(f1)*Math.sin(f2));
+    return [deg(f2),((deg(l2)+540)%360)-180]; }
+  function angDiff(a,b){ var d=Math.abs(a-b)%360; return d>180?360-d:d; }
+  function taToMeters(ta,radio){ if(ta==null||ta<0) return null;
+    if(/gsm/i.test(radio)) return {min:ta*550,max:(ta+1)*550};
+    if(/lte/i.test(radio)) return {min:ta*78.125,max:(ta+1)*78.125};
+    if(/nr|5g/i.test(radio)) return {min:ta*39.06,max:(ta+1)*39.06};
+    return null; }
+
+  function _dw(o,opts){ var dist, tb=(o.ta!=null)?taToMeters(o.ta,o.radio):null;
+    if(tb) dist=(tb.min+tb.max)/2; else if(o.range) dist=o.range*(opts.rangeFactor||0.4); else dist=opts.defaultDist||300;
+    var w; if(o.signal!=null&&isFinite(o.signal)) w=Math.pow(10,o.signal/20);
+    else if(o.samples) w=Math.log10(1+o.samples); else w=1/Math.max(1,dist);
+    if(o.confidence!=null) w*=(0.3+o.confidence); return {dist:dist,weight:w}; }
+
+  // Giao các quạt (±beamwidth/2) với vành TA trên lưới → vùng xác suất + điểm fix
+  function gridOverlapFix(obs,opts){ opts=Object.assign({step:25,threshold:0.85,maxRange:8000,maxCells:200000},opts);
+    var minLat=90,maxLat=-90,minLon=180,maxLon=-180;
+    var prep=obs.map(function(o){ var slat=o.siteLat!=null?o.siteLat:o.lat, slon=o.siteLon!=null?o.siteLon:o.lon;
+      var tb=(o.ta!=null)?taToMeters(o.ta,o.radio):null;
+      var rmax=tb?tb.max:(o.range||opts.maxRange), rmin=tb?tb.min:0;
+      var hb=(o.beamwidth!=null?o.beamwidth:(o.azimuth==null?360:120))/2; var dw=_dw(o,opts);
+      minLat=Math.min(minLat,destPoint(slat,slon,180,rmax)[0]); maxLat=Math.max(maxLat,destPoint(slat,slon,0,rmax)[0]);
+      minLon=Math.min(minLon,destPoint(slat,slon,270,rmax)[1]); maxLon=Math.max(maxLon,destPoint(slat,slon,90,rmax)[1]);
+      return {slat:slat,slon:slon,rmin:rmin,rmax:rmax,hb:hb,az:o.azimuth,omni:o.azimuth==null,w:dw.weight}; });
+    var midLat=(minLat+maxLat)/2, step=opts.step, dLat=step/111320, dLon=step/(111320*Math.cos(rad(midLat)));
+    var cols=(maxLon-minLon)/dLon, rows=(maxLat-minLat)/dLat;
+    if(cols*rows>opts.maxCells){ var k=Math.sqrt(cols*rows/opts.maxCells); step*=k; dLat*=k; dLon*=k; }
+    var heat=[],best=null,maxScore=0;
+    for(var la=minLat; la<=maxLat; la+=dLat){ for(var lo=minLon; lo<=maxLon; lo+=dLon){ var s=0;
+      for(var i=0;i<prep.length;i++){ var p=prep[i]; var dd=haversine(p.slat,p.slon,la,lo);
+        if(dd<p.rmin||dd>p.rmax) continue;
+        if(!p.omni && angDiff(bearing(p.slat,p.slon,la,lo),p.az)>p.hb) continue; s+=p.w; }
+      if(s>0){ heat.push({lat:la,lon:lo,score:s}); if(s>maxScore){maxScore=s;best={lat:la,lon:lo};} } } }
+    var sx=0,sy=0,sw=0; heat.forEach(function(h){ h.norm=h.score/maxScore;
+      if(h.score>=opts.threshold*maxScore){ sx+=h.lat*h.score; sy+=h.lon*h.score; sw+=h.score; } });
+    var fix=sw>0?{lat:sx/sw,lon:sy/sw}:best;
+    return {lat:fix?fix.lat:null,lon:fix?fix.lon:null,maxScore:maxScore,heat:heat,step:step}; }
+
+  function _needL(){ if(typeof L==='undefined') throw new Error('Leaflet chưa tải'); }
+  function sectorLatLngs(site,az,bw,r,n){ n=n||24; var pts=[];
+    if(az==null){ for(var a=0;a<=360;a+=360/n) pts.push(destPoint(site.lat,site.lon,a,r)); return pts; }
+    pts.push([site.lat,site.lon]); var st=az-bw/2,en=az+bw/2;
+    for(var i=0;i<=n;i++) pts.push(destPoint(site.lat,site.lon,st+(en-st)*i/n,r)); pts.push([site.lat,site.lon]); return pts; }
+  function drawSector(map,site,az,bw,r,style){ _needL();
+    return L.polygon(sectorLatLngs(site,az,bw||120,r||800),
+      Object.assign({color:'#0F6E56',weight:1,fillColor:'#1D9E75',fillOpacity:0.15},style||{})).addTo(map); }
+  function drawFix(map,lat,lon,acc,style){ _needL(); var grp=L.layerGroup();
+    L.circle([lat,lon],Object.assign({radius:acc||120,color:'#7b1fa2',weight:1.5,fillOpacity:0.12},style||{})).addTo(grp);
+    L.marker([lat,lon],{icon:L.divIcon({className:'',html:'<div style="background:#7b1fa2;color:#fff;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:bold;box-shadow:0 2px 7px rgba(0,0,0,.45);white-space:nowrap">🎯 Điểm giao</div>',iconAnchor:[40,12]}),zIndexOffset:4000})
+      .bindPopup('<div class="bts-popup"><div class="bts-title" style="color:#7b1fa2">🎯 Vị trí giao quạt</div><b>Lat:</b> '+lat.toFixed(6)+'<br><b>Lon:</b> '+lon.toFixed(6)+'<br><a href="https://www.google.com/maps?q='+lat+','+lon+'" target="_blank">🗺️ Google Maps</a></div>').addTo(grp);
+    return grp.addTo(map); }
+  function heatColor(t){ var a=[29,158,117],b=[216,90,48];
+    return 'rgb('+Math.round(a[0]+(b[0]-a[0])*t)+','+Math.round(a[1]+(b[1]-a[1])*t)+','+Math.round(a[2]+(b[2]-a[2])*t)+')'; }
+  function drawHeat(map,grid){ _needL(); var grp=L.layerGroup(), dLat=grid.step/111320;
+    grid.heat.forEach(function(h){ var dLon=grid.step/(111320*Math.cos(rad(h.lat)));
+      L.rectangle([[h.lat-dLat/2,h.lon-dLon/2],[h.lat+dLat/2,h.lon+dLon/2]],
+        {stroke:false,fillColor:heatColor(h.norm),fillOpacity:0.12+0.45*h.norm}).addTo(grp); });
+    return grp.addTo(map); }
+
+  g.CellLocator = { haversine:haversine, bearing:bearing, destPoint:destPoint, taToMeters:taToMeters,
+    gridOverlapFix:gridOverlapFix, drawSector:drawSector, drawFix:drawFix, drawHeat:drawHeat };
+})(window);
+</script>
+
+<script>
+// ============================================================
+//  GLOBALS
+// ============================================================
+var map, markersLayer, btsLayer;
+var resultData = [];
+var bulkRoutePoints = [];
+var historyData = JSON.parse(localStorage.getItem("cellHistory") || "[]");
+var currentMode = 'lookup';
+
+var apiList = [
+  "pk.8f39cfc3b9bac41467cbc82d2ae4e43f",
+  "pk.18fd1a0d1145e6e0bbc3509759e29e3b",
+  "pk.e26a438af20e331060462fc387e9133c",
+  "pk.359e7cf0382210a7be66fe596a71d78f",
+  "pk.8dd39c70943f3aa53351d46c7d604ed7",
+  "pk.9a4f72d7b20608c4a29d8b822dd49d5a",
+
+  "pk.f600f73cd46c6b815e81a9149f4892f9",
+  "pk.972c8f8f5dd34478fb3288ba5e7e5444",
+  "pk.fd55f3c3dbbc3db5496c0e453f5ec19f",
+  "pk.b85bba40387accd1d9b05b5ba4602f97",
+  "pk.a0e2e706b9c470a10c4b52a0340c41d3",
+  "pk.420df538523e3570595ed290ae565666",
+  "pk.459729384287fc3658cc0be78ce0e90a",
+  "pk.7d39dad5183bce54f6914f39ad28be05",
+  "pk.ecc20abbd61013290649761fecb737a4",
+  "pk.1f842cdce082f2d7b3de42361bcff5fa",
+  "pk.206573dd34cef40971310df9e7c12970",
+  "pk.1240f527b89f8581901e8cca09c70aff",
+  "pk.1b37a20980428aa669f31f45628c5810",
+  "pk.df1191ad77ee3db559a5930ea468e25b",
+  "pk.302508ac0d02da617362fbff3ee6c736"
+];
+var currentApiIndex = 0;
+
+// ===== API thêm vào (lưu localStorage, kết hợp 21 API gốc) =====
+var EXTRA_API_KEY='extraApiKeysV1';
+(function loadExtraApis(){
+  try{ JSON.parse(localStorage.getItem(EXTRA_API_KEY)||'[]').forEach(function(k){ if(k && apiList.indexOf(k)<0) apiList.push(k); }); }catch(e){}
+})();
+function addApiKeys(text){
+  if(!text) return 0;
+  var keys=(''+text).split(/[\s,;]+/).map(function(s){return s.trim();}).filter(Boolean);
+  var saved=[]; try{ saved=JSON.parse(localStorage.getItem(EXTRA_API_KEY)||'[]'); }catch(e){}
+  var added=0;
+  keys.forEach(function(k){
+    if(apiList.indexOf(k)<0) apiList.push(k);
+    if(saved.indexOf(k)<0){ saved.push(k); added++; }
+  });
+  try{ localStorage.setItem(EXTRA_API_KEY, JSON.stringify(saved)); }catch(e){}
+  return added;
+}
+function promptAddApi(){
+  var t=prompt('Dán API token mới (Unwired Labs). Nhiều token cách nhau bằng dấu phẩy hoặc xuống dòng:');
+  if(t==null) return;
+  var n=addApiKeys(t);
+  var ind=document.getElementById('apiIndicator');
+  if(ind) ind.textContent='API: '+(currentApiIndex+1)+'/'+apiList.length;
+  alert('✅ Đã thêm '+n+' API mới.\nTổng '+apiList.length+' API (21 gốc + đã thêm), dùng kết hợp khi tra cell.');
+}
+
+function getCurrentApi() {
+  document.getElementById("apiIndicator").textContent = "API: " + (currentApiIndex + 1) + "/" + apiList.length;
+  return apiList[currentApiIndex];
+}
+function switchToNextApi() {
+  currentApiIndex = (currentApiIndex + 1) % apiList.length;
+  document.getElementById("apiIndicator").textContent = "API: " + (currentApiIndex + 1) + "/" + apiList.length;
+}
+
+var resultsDiv    = document.getElementById("results");
+var fileInput     = document.getElementById("fileInput");
+var cellInputEl   = document.getElementById("cellInput");
+var importStatus  = document.getElementById("importStatus");
+var duplicateSec  = document.getElementById("duplicateSection");
+var duplicateList = document.getElementById("duplicateList");
+var duplicateCnt  = document.getElementById("duplicateCount");
+var controlPanel  = document.getElementById("controlPanel");
+
+// ============================================================
+//  INIT MAP
+// ============================================================
+window.onload = function() {
+  map = L.map("map").setView([16.047, 108.206], 6);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(map);
+  markersLayer = L.layerGroup().addTo(map);
+  btsLayer     = L.layerGroup().addTo(map);
+  if (localStorage.getItem("darkMode") === "true") {
+    document.body.classList.add("dark-mode");
+    document.getElementById("darkModeToggle").textContent = "☀️";
+  }
+  setupExclusiveCheckboxes();
+  getCurrentApi();
+  if(window.BTSOverlay) BTSOverlay.init();   // lớp BTS MobiFone + KML/KMZ
+};
+
+// ============================================================
+//  UI
+// ============================================================
+document.getElementById("togglePanel").onclick = function() { controlPanel.classList.add("open"); };
+function closePanel() { controlPanel.classList.remove("open"); }
+
+function toggleDarkMode() {
+  document.body.classList.toggle("dark-mode");
+  var dm = document.body.classList.contains("dark-mode");
+  document.getElementById("darkModeToggle").textContent = dm ? "☀️" : "🌙";
+  localStorage.setItem("darkMode", dm);
+}
+
+var _sY = 0;
+controlPanel.addEventListener("touchstart", function(e) { _sY = e.touches[0].clientY; });
+controlPanel.addEventListener("touchmove", function(e) {
+  var d = e.touches[0].clientY - _sY;
+  if (d > 80) controlPanel.classList.remove("open");
+  if (d < -80) controlPanel.classList.add("open");
+});
+var _sYg = 0;
+document.addEventListener("touchstart", function(e) { _sYg = e.touches[0].clientY; });
+document.addEventListener("touchmove", function(e) {
+  var d = e.touches[0].clientY - _sYg;
+  if (_sYg > window.innerHeight - 150 && d < -80 && !controlPanel.classList.contains("open"))
+    controlPanel.classList.add("open");
+});
+
+function setupExclusiveCheckboxes() {
+  var ids = ["umts","lte","nbiot","nr","auto"];
+  ids.forEach(function(id) {
+    document.getElementById(id).addEventListener("change", function() {
+      if (document.getElementById(id).checked)
+        ids.forEach(function(o) { if (o !== id) document.getElementById(o).checked = false; });
+      else if (!ids.some(function(i) { return document.getElementById(i).checked; }))
+        document.getElementById("auto").checked = true;
+    });
+  });
+}
+function importFile() { fileInput.click(); }
+
+// ============================================================
+//  CELL PARSING
+// ============================================================
+function convertCellId(cidStr) {
+  if (!cidStr.startsWith('0')) return { converted: false, newCellId: cidStr };
+  var n = parseInt(cidStr);
+  if (isNaN(n)) return { converted: false, newCellId: cidStr };
+  var d1 = Math.floor(n / 100000), d2 = n % 100000;
+  var hex = d1.toString(16).toUpperCase() + d2.toString(16).toUpperCase();
+  return { converted: true, newCellId: parseInt(hex, 16).toString() };
+}
+
+function parseCell(raw, defaultMcc) {
+  defaultMcc = defaultMcc || "452";
+  var input = (raw || "").trim();
+  if (!input) return { success: false, reason: "Rỗng" };
+
+  if (/^\d+$/.test(input)) {
+    var r = parseEnhancedCont(input, defaultMcc);
+    if (r.success) return r;
+    if (input.length >= 10) return parseContinuousFull(input);
+    return { success: false, reason: "Chuỗi quá ngắn" };
+  }
+  if (input.indexOf('.') !== -1) {
+    var parts = input.split('.');
+    if (parts.length === 4) {
+      var mcc = parts[0], mnc = parts[1], lac = parts[2], cid = parts[3];
+      if (!/^\d{3}$/.test(mcc) || +mcc < 200 || +mcc > 999)
+        return { success: false, reason: "MCC không hợp lệ" };
+      var cvt = false;
+      if (cid.startsWith && cid.startsWith('0')) { var rv = convertCellId(cid); if (rv.converted) { cid = rv.newCellId; cvt = true; } }
+      var cm = mnc.replace(/^0+/,'') || mnc.slice(-1);
+      var cl = lac.replace(/^0+/,'') || lac.slice(-1);
+      var cc = cid.replace(/^0+/,'') || cid.slice(-1);
+      return { success:true, cellId:cm+"."+cl+"."+cc, parsed:{mcc:mcc,mnc:cm,lac:cl,cellid:cc}, conversionApplied:cvt };
+    }
+    if (parts.length === 3) {
+      var mnc3 = parts[0], lac3 = parts[1], cid3 = parts[2];
+      var cvt3 = false;
+      if (cid3.startsWith && cid3.startsWith('0')) { var rv3 = convertCellId(cid3); if (rv3.converted) { cid3 = rv3.newCellId; cvt3 = true; } }
+      var cm3 = mnc3.replace(/^0+/,'') || mnc3.slice(-1);
+      var cl3 = lac3.replace(/^0+/,'') || lac3.slice(-1);
+      var cc3 = cid3.replace(/^0+/,'') || cid3.slice(-1);
+      return { success:true, cellId:cm3+"."+cl3+"."+cc3, parsed:{mcc:defaultMcc,mnc:cm3,lac:cl3,cellid:cc3}, conversionApplied:cvt3 };
+    }
+  }
+  return { success: false, reason: "Không nhận dạng được" };
+}
+
+function parseEnhancedCont(s, defMcc) {
+  var vMncs = ['01','02','04','05','07','09'];
+  if (s.length >= 8) {
+    var m2 = s.substring(0,2);
+    if (vMncs.indexOf(m2) !== -1) {
+      var mnc = m2, lac = s.substring(2,7), cid = s.substring(7);
+      if (!cid.length || cid.length > 15) return { success:false };
+      var fid = cid, cvt = false;
+      if (cid.startsWith && cid.startsWith('0')) { var r = convertCellId(cid); if (r.converted) { fid = r.newCellId; cvt = true; } }
+      return { success:true, cellId:(mnc.replace(/^0+/,'')||mnc.slice(-1))+"."+(lac.replace(/^0+/,'')||lac.slice(-1))+"."+(fid.replace(/^0+/,'')||fid.slice(-1)), parsed:{mcc:defMcc,mnc:mnc.replace(/^0+/,'')||mnc.slice(-1),lac:lac.replace(/^0+/,'')||lac.slice(-1),cellid:fid} };
+    }
+  }
+  if (s.length >= 11) {
+    var mcc3 = s.substring(0,3), m2b = s.substring(3,5);
+    if (+mcc3 >= 200 && +mcc3 <= 999 && vMncs.indexOf(m2b) !== -1) {
+      var lac2 = s.substring(5,10), cid2 = s.substring(10);
+      if (!cid2.length || cid2.length > 15) return { success:false };
+      var fid2 = cid2, cvt2 = false;
+      if (cid2.startsWith && cid2.startsWith('0')) { var r2 = convertCellId(cid2); if (r2.converted) { fid2 = r2.newCellId; cvt2 = true; } }
+      return { success:true, cellId:(m2b.replace(/^0+/,'')||m2b.slice(-1))+"."+(lac2.replace(/^0+/,'')||lac2.slice(-1))+"."+(fid2.replace(/^0+/,'')||fid2.slice(-1)), parsed:{mcc:mcc3,mnc:m2b.replace(/^0+/,'')||m2b.slice(-1),lac:lac2.replace(/^0+/,'')||lac2.slice(-1),cellid:fid2} };
+    }
+  }
+  return { success:false };
+}
+
+function parseContinuousFull(s) {
+  if (s.length < 10 || s.length > 25) return { success:false };
+  var mcc = s.substring(0,3), mnc = s.substring(3,5), lac = s.substring(5,10), cid = s.substring(10);
+  if (!cid.length || cid.length > 15 || +mcc < 200 || +mcc > 999) return { success:false };
+  var fid = cid, cvt = false;
+  if (cid.startsWith && cid.startsWith('0')) { var r = convertCellId(cid); if (r.converted) { fid = r.newCellId; cvt = true; } }
+  return { success:true, cellId:(mnc.replace(/^0+/,'')||mnc.slice(-1))+"."+(lac.replace(/^0+/,'')||lac.slice(-1))+"."+(fid.replace(/^0+/,'')||fid.slice(-1)), parsed:{mcc:mcc,mnc:mnc.replace(/^0+/,'')||mnc.slice(-1),lac:lac.replace(/^0+/,'')||lac.slice(-1),cellid:fid} };
+}
+
+// ============================================================
+//  NHÓM & ĐỔI ĐUI
+// ============================================================
+function getSuffix(cidInt) { return cidInt % 10; }
+
+function getGroup(suffix) {
+  if (suffix===1||suffix===2||suffix===3) return [1,2,3];
+  if (suffix===4||suffix===5||suffix===6) return [4,5,6];
+  if (suffix===7||suffix===8||suffix===9) return [7,8,9];
+  return null;
+}
+
+function changeSuffix(cidStr, newSuffix) {
+  var n = parseInt(cidStr);
+  return String(n - (n % 10) + newSuffix);
+}
+
+// ============================================================
+//  GEO HELPERS
+// ============================================================
+function toRad(d) { return d * Math.PI / 180; }
+function toDeg(r) { return r * 180 / Math.PI; }
+
+function getBearing(lat1, lon1, lat2, lon2) {
+  var dLon = toRad(lon2 - lon1);
+  var y = Math.sin(dLon) * Math.cos(toRad(lat2));
+  var x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) - Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLon);
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+}
+
+function bearingToDir(b) {
+  var dirs = ['Bắc ↑','Đông Bắc ↗','Đông →','Đông Nam ↘','Nam ↓','Tây Nam ↙','Tây ←','Tây Bắc ↖'];
+  return dirs[Math.round(b / 45) % 8];
+}
+function bearingToDirShort(b) {
+  var dirs = ['Bắc','Đông Bắc','Đông','Đông Nam','Nam','Tây Nam','Tây','Tây Bắc'];
+  return dirs[Math.round(b / 45) % 8];
+}
+
+function midpoint(lat1,lon1,lat2,lon2) {
+  return [(lat1+lat2)/2, (lon1+lon2)/2];
+}
+
+function centroid(pts) {
+  var lat=0, lon=0;
+  for (var i=0;i<pts.length;i++){lat+=pts[i][0];lon+=pts[i][1];}
+  return [lat/pts.length, lon/pts.length];
+}
+
+function distMeters(a, b) {
+  var R=6371000, dLat=toRad(b[0]-a[0]), dLon=toRad(b[1]-a[1]);
+  var x=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(toRad(a[0]))*Math.cos(toRad(b[0]))*Math.sin(dLon/2)*Math.sin(dLon/2);
+  return 2*R*Math.asin(Math.sqrt(x));
+}
+
+function destPoint(lat, lon, bearing, distM) {
+  var R=6371000, d=distM/R, b=toRad(bearing), la=toRad(lat), lo=toRad(lon);
+  var lat2=Math.asin(Math.sin(la)*Math.cos(d)+Math.cos(la)*Math.sin(d)*Math.cos(b));
+  var lon2=lo+Math.atan2(Math.sin(b)*Math.sin(d)*Math.cos(la),Math.cos(d)-Math.sin(la)*Math.sin(lat2));
+  return [toDeg(lat2), toDeg(lon2)];
+}
+
+// ============================================================
+//  VẼ QUẠT 120°
+// ============================================================
+function drawSector(bLat, bLon, bearing, radiusM, color, labelTxt) {
+  var startB = bearing - 60, endB = bearing + 60;
+  var pts = [[bLat, bLon]];
+  for (var b = startB; b <= endB; b += 3) pts.push(destPoint(bLat, bLon, b, radiusM));
+  pts.push([bLat, bLon]);
+  L.polygon(pts, { color:color, fillColor:color, fillOpacity:0.22, weight:2, lineJoin:'round' }).addTo(btsLayer);
+  var edgePt = destPoint(bLat, bLon, bearing, radiusM);
+  L.polyline([[bLat,bLon], edgePt], { color:color, weight:2.5, dashArray:'7,4', opacity:0.85 }).addTo(btsLayer);
+  var lp = destPoint(bLat, bLon, bearing, radiusM * 0.55);
+  L.marker(lp, {
+    icon: L.divIcon({
+      className:'',
+      html: '<div style="background:'+color+';color:#fff;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:bold;white-space:nowrap;box-shadow:0 1px 5px rgba(0,0,0,0.4)">'+labelTxt+'</div>',
+      iconAnchor:[36,10]
+    })
+  }).addTo(btsLayer);
+}
+
+// ============================================================
+//  TÍNH HƯỚNG BTS → CELL GỐC
+// ============================================================
+function calcBTSDirection(btsLat, btsLon, origPt, otherPts) {
+  if (!otherPts || otherPts.length === 0) {
+    return getBearing(btsLat, btsLon, origPt.lat, origPt.lon);
+  }
+  if (otherPts.length === 1) {
+    return getBearing(btsLat, btsLon, origPt.lat, origPt.lon);
+  }
+  var mp1 = midpoint(btsLat, btsLon, otherPts[0].lat, otherPts[0].lon);
+  var mp2 = midpoint(btsLat, btsLon, otherPts[1].lat, otherPts[1].lon);
+  var midMid = midpoint(mp1[0], mp1[1], mp2[0], mp2[1]);
+  var brgThrough = getBearing(btsLat, btsLon, midMid[0], midMid[1]);
+  var brgToOrig = getBearing(btsLat, btsLon, origPt.lat, origPt.lon);
+  return brgToOrig;
+}
+
+// ============================================================
+//  MARKER BTS
+// ============================================================
+function addBtsMarker(lat, lon, labelHtml, popupHtml, caseType) {
+  var colors = { triangle:'#7b1fa2', case2:'#1565c0', circle:'#e53935' };
+  var col = colors[caseType] || '#333';
+  var marker = L.marker([lat, lon], {
+    icon: L.divIcon({
+      className:'',
+      html: '<div style="background:'+col+';color:#fff;padding:4px 11px;border-radius:10px;font-size:12px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,0.45);white-space:nowrap">📡 BTS</div>',
+      iconAnchor:[32,14]
+    }),
+    zIndexOffset: 2000
+  }).addTo(btsLayer);
+  marker.bindPopup(popupHtml, { maxWidth: 280 });
+  return marker;
+}
+
+// ============================================================
+//  POPUP CELL GỐC
+// ============================================================
+function buildOriginalCellPopup(info, subCells, btsInfo) {
+  var gUrl = "https://www.google.com/maps?q=" + info.lat + "," + info.lon;
+  var dirHtml = '';
+  if (btsInfo && btsInfo.bearing !== undefined) {
+    var dir = bearingToDir(btsInfo.bearing);
+    dirHtml = '<div style="margin:5px 0"><span class="dir-badge">📐 ' + dir + ' (' + Math.round(btsInfo.bearing) + '°)</span></div>';
+  }
+  var subHtml = '';
+  if (subCells && subCells.length > 0) {
+    subHtml = '<div class="popup-sub"><div class="popup-sub-title">📱 Các cell phụ đã tra:</div>';
+    subCells.forEach(function(sc) {
+      if (!sc) return;
+      var scUrl = "https://www.google.com/maps?q=" + sc.lat + "," + sc.lon;
+      subHtml += '<div class="sub-cell-row">' +
+        '<b>Đuôi ' + sc.suffix + ':</b> ' + sc.cellIdFull + '<br>' +
+        '📍 ' + sc.lat.toFixed(6) + ', ' + sc.lon.toFixed(6) + '<br>' +
+        '🏠 ' + (sc.address || '-') + '<br>' +
+        '📡 ' + (sc.tech||'').toUpperCase() + ' | ' + (sc.accuracy||'-') + ' m<br>' +
+        '<a href="' + scUrl + '" target="_blank">🗺️ Mở Google Maps cell phụ</a>' +
+        '</div>';
+    });
+    subHtml += '</div>';
+  }
+  return '<div class="cell-popup">' +
+    '<div class="popup-title">⭐ Cell gốc – Đuôi ' + info.suffix + '</div>' +
+    '<b>Cell ID:</b> ' + info.cellIdFull + '<br>' +
+    '<b>Vĩ độ:</b> ' + info.lat.toFixed(6) + '<br>' +
+    '<b>Kinh độ:</b> ' + info.lon.toFixed(6) + '<br>' +
+    '<b>Địa chỉ:</b> ' + (info.address || '-') + '<br>' +
+    '<b>Mạng:</b> ' + (info.tech||'').toUpperCase() + '<br>' +
+    '<b>Khoảng cách:</b> ' + (info.accuracy||'-') + ' m<br>' +
+    '<b>MCC.MNC.LAC.CID:</b> ' + info.cellIdFull + '<br>' +
+    dirHtml +
+    '<a href="' + gUrl + '" target="_blank">🗺️ Mở Google Maps</a>' +
+    subHtml +
+    '</div>';
+}
+
+// ============================================================
+//  POPUP CELL PHỤ
+// ============================================================
+function buildSubCellPopup(info, btsInfo) {
+  var gUrl = "https://www.google.com/maps?q=" + info.lat + "," + info.lon;
+  var brgHtml = '';
+  if (btsInfo) {
+    var b2 = getBearing(btsInfo.btsLat, btsInfo.btsLon, info.lat, info.lon);
+    brgHtml = '<b>Hướng từ BTS:</b> ' + bearingToDir(b2) + ' (' + Math.round(b2) + '°)<br>';
+  }
+  return '<div class="cell-popup">' +
+    '<div class="popup-title" style="color:#1565c0">📱 Cell phụ – Đuôi ' + info.suffix + '</div>' +
+    '<b>Cell ID:</b> ' + info.cellIdFull + '<br>' +
+    '<b>Vĩ độ:</b> ' + info.lat.toFixed(6) + '<br>' +
+    '<b>Kinh độ:</b> ' + info.lon.toFixed(6) + '<br>' +
+    '<b>Địa chỉ:</b> ' + (info.address||'-') + '<br>' +
+    '<b>Mạng:</b> ' + (info.tech||'').toUpperCase() + '<br>' +
+    '<b>Khoảng cách:</b> ' + (info.accuracy||'-') + ' m<br>' +
+    brgHtml +
+    '<a href="' + gUrl + '" target="_blank">🗺️ Mở Google Maps</a>' +
+    '</div>';
+}
+
+// ============================================================
+//  POPUP BTS
+// ============================================================
+function buildBtsPopup(btsLat, btsLon, caseLabel, dirText) {
+  var gUrl = "https://www.google.com/maps?q=" + btsLat + "," + btsLon;
+  return '<div class="bts-popup">' +
+    '<div class="bts-title">📡 Vị trí BTS (ước tính)</div>' +
+    '<b>Vĩ độ:</b> ' + btsLat.toFixed(6) + '<br>' +
+    '<b>Kinh độ:</b> ' + btsLon.toFixed(6) + '<br>' +
+    '<b>Loại:</b> ' + caseLabel + '<br>' +
+    '<b>Hướng cell gốc:</b> ' + dirText + '<br>' +
+    '<a href="' + gUrl + '" target="_blank" style="display:block;margin-top:6px">🗺️ Mở Google Maps BTS</a>' +
+    '</div>';
+}
+
+// ============================================================
+//  PHÂN TÍCH BTS
+// ============================================================
+function analyzeBTS(groupResults, origSuffix, group, mcc, mnc, lac) {
+  btsLayer.clearLayers();
+  var valid = groupResults.filter(function(p) { return p !== null; });
+  if (valid.length === 0) return null;
+
+  var SECTOR_R = 450;
+
+  function same(a, b) {
+    if (!a || !b) return false;
+    return distMeters([a.lat,a.lon],[b.lat,b.lon]) < 30;
+  }
+
+  var origCell = null, otherCells = [];
+  valid.forEach(function(p) {
+    if (p.suffix === origSuffix) origCell = p;
+    else otherCells.push(p);
+  });
+  if (!origCell && valid.length > 0) origCell = valid[0];
+
+  var p1 = null, p2 = null, p3 = null;
+  valid.forEach(function(p) {
+    if (p.suffix === group[0]) p1 = p;
+    else if (p.suffix === group[1]) p2 = p;
+    else if (p.suffix === group[2]) p3 = p;
+  });
+
+  var btsLat, btsLon, bearing, dirText, dirShort, caseLabel;
+
+  var allSame = (p1 && p2 && p3 && same(p1,p2) && same(p2,p3));
+  if (allSame || valid.length === 1) {
+    btsLat = origCell.lat; btsLon = origCell.lon;
+    caseLabel = '3 cell cùng 1 điểm';
+    dirText = 'Vùng phủ 150m'; dirShort = 'Vùng phủ 150m';
+    L.circle([btsLat,btsLon], { radius:150, color:'#e53935', fillColor:'#e53935', fillOpacity:0.20, weight:2 }).addTo(btsLayer);
+    var mk = addBtsMarker(btsLat, btsLon, '', buildBtsPopup(btsLat, btsLon, caseLabel, dirText), 'circle');
+    return { btsLat:btsLat, btsLon:btsLon, caseLabel:caseLabel, dirText:dirText, dirShort:dirShort, bearing:undefined, btsMk:mk };
+  }
+
+  var singlePt = null, pairedPts = [];
+
+  if (p1 && p2 && p3) {
+    var s12=same(p1,p2), s13=same(p1,p3), s23=same(p2,p3);
+    if (s23 && !s12) { pairedPts=[p2,p3]; singlePt=p1; }
+    else if (s12 && !s23) { pairedPts=[p1,p2]; singlePt=p3; }
+    else if (s13 && !s12) { pairedPts=[p1,p3]; singlePt=p2; }
+  } else if (valid.length === 2 && same(valid[0],valid[1])) {
+    btsLat = valid[0].lat; btsLon = valid[0].lon;
+    caseLabel = '2 cell cùng điểm';
+    dirText = 'Vùng phủ 150m'; dirShort = 'Vùng phủ 150m';
+    L.circle([btsLat,btsLon], { radius:150, color:'#e53935', fillColor:'#e53935', fillOpacity:0.20, weight:2 }).addTo(btsLayer);
+    var mk2 = addBtsMarker(btsLat, btsLon, '', buildBtsPopup(btsLat, btsLon, caseLabel, dirText), 'circle');
+    return { btsLat:btsLat, btsLon:btsLon, caseLabel:caseLabel, dirText:dirText, dirShort:dirShort, bearing:undefined, btsMk:mk2 };
+  }
+
+  if (singlePt && pairedPts.length >= 1) {
+    var pairMid = midpoint(pairedPts[0].lat, pairedPts[0].lon, pairedPts.length > 1 ? pairedPts[1].lat : pairedPts[0].lat, pairedPts.length > 1 ? pairedPts[1].lon : pairedPts[0].lon);
+    var btsArr = midpoint(singlePt.lat, singlePt.lon, pairMid[0], pairMid[1]);
+    btsLat = btsArr[0]; btsLon = btsArr[1];
+    caseLabel = '2 cell trùng + 1 cell đơn';
+    bearing = getBearing(btsLat, btsLon, origCell.lat, origCell.lon);
+    dirShort = bearingToDirShort(bearing);
+    dirText = bearingToDir(bearing) + ' (' + Math.round(bearing) + '°)';
+    // Ẩn đường kẻ/điểm trung gian, chỉ vẽ quạt hướng cell gốc
+    drawSector(btsLat, btsLon, bearing, SECTOR_R, '#e53935', dirShort + ' ' + Math.round(bearing) + '°');
+    var mk3 = addBtsMarker(btsLat, btsLon, '', buildBtsPopup(btsLat, btsLon, caseLabel, dirText), 'case2');
+    return { btsLat:btsLat, btsLon:btsLon, caseLabel:caseLabel, dirText:dirText, dirShort:dirShort, bearing:bearing, btsMk:mk3 };
+  }
+
+  var triPts = valid.map(function(p){ return [p.lat,p.lon]; });
+  var btsC = centroid(triPts);
+  btsLat = btsC[0]; btsLon = btsC[1];
+  caseLabel = '3 cell tạo thành tam giác';
+  bearing = calcBTSDirection(btsLat, btsLon, origCell, otherCells);
+  dirShort = bearingToDirShort(bearing);
+  dirText = bearingToDir(bearing) + ' (' + Math.round(bearing) + '°)';
+  // Chỉ vẽ quạt 120° hướng cell gốc + BTS marker (ẩn tam giác/đường/điểm phụ)
+  drawSector(btsLat, btsLon, bearing, SECTOR_R, '#e53935', dirShort + ' ' + Math.round(bearing) + '°');
+  var mk4 = addBtsMarker(btsLat, btsLon, '', buildBtsPopup(btsLat, btsLon, caseLabel, dirText), 'triangle');
+  return { btsLat:btsLat, btsLon:btsLon, caseLabel:caseLabel, dirText:dirText, dirShort:dirShort, bearing:bearing, btsMk:mk4 };
+}
+
+// ============================================================
+//  TẠO RESULT ITEM TRONG PANEL
+// ============================================================
+function createResultItem(stt, info, btsInfo, subCells) {
+  var item = document.createElement("div");
+  item.className = "result-item";
+  if (info.isOriginal) item.style.cssText = "border-left:4px solid #e53935";
+
+  var lines = [];
+  if (info.isOriginal) lines.push('⭐ CELL GỐC (đuôi ' + info.suffix + ')');
+  else lines.push('📱 Cell phụ (đuôi ' + info.suffix + ')');
+  lines.push('Cell: ' + info.cellIdFull);
+  lines.push('Vĩ/Kinh: ' + info.lat.toFixed(6) + ', ' + info.lon.toFixed(6));
+  lines.push('Địa chỉ: ' + (info.address || '-'));
+  lines.push('Mạng: ' + (info.tech||'').toUpperCase());
+  lines.push('Khoảng cách: ' + (info.accuracy||'-') + ' m');
+  if (info.isOriginal && btsInfo && btsInfo.bearing !== undefined) {
+    lines.push('📐 Hướng: ' + bearingToDir(btsInfo.bearing) + ' (' + Math.round(btsInfo.bearing) + '°)');
+  }
+
+  var textDiv = document.createElement("div");
+  textDiv.className = "result-text";
+  textDiv.innerHTML = '<b>STT ' + stt + (info.isOriginal ? ' ★' : '') + '</b>\n' + lines.join('\n');
+
+  var actDiv = document.createElement("div");
+  actDiv.className = "result-actions";
+  var gLink = document.createElement("a");
+  gLink.className = "g-button"; gLink.target = "_blank";
+  gLink.href = "https://www.google.com/maps?q=" + info.lat + "," + info.lon;
+  gLink.innerHTML = "G";
+  actDiv.appendChild(gLink);
+  item.appendChild(textDiv);
+  item.appendChild(actDiv);
+
+  var _info = info;
+  item.addEventListener('click', function(e) {
+    if (e.target === gLink || gLink.contains(e.target)) return;
+    map.setView([_info.lat, _info.lon], 17);
+    if (_info.marker) _info.marker.openPopup();
+  });
+  return item;
+}
+
+// ============================================================
+//  API LOOKUP
+//  *** CHỈ PHẦN NÀY ĐƯỢC THAY ĐỔI SO VỚI CODE GỐC ***
+//  Thêm: tự động xoay qua tất cả API nếu API hiện tại không
+//  có kết quả, cho đến khi tìm thấy hoặc hết danh sách API.
+// ============================================================
+
+// Gọi 1 lần với 1 API key + 1 loại mạng
+async function callOneApi(apiKey, tech, mcc, mnc, lac, cid) {
+  try {
+    var res = await fetch("https://us1.unwiredlabs.com/v2/process.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: apiKey,
+        radio: tech.toUpperCase(),
+        mcc: parseInt(mcc), mnc: parseInt(mnc),
+        cells: [{ lac: parseInt(lac), cid: parseInt(cid) }],
+        address: 1
+      })
+    });
+    var data = await res.json();
+    if (data && data.status === "ok" && typeof data.lat === "number")
+      return { success: true, data: data, tech: tech };
+  } catch(e) {}
+  return { success: false };
+}
+
+// Tra 1 cell: thử tất cả loại mạng với API hiện tại.
+// Nếu không ra → tự động chuyển sang API tiếp theo và thử lại.
+// Tiếp tục cho đến khi có kết quả hoặc đã thử hết tất cả API.
+async function lookupCell(mnc, lac, cid, mcc, techs) {
+  var startIdx = currentApiIndex;  // ghi nhớ API đang dùng khi bắt đầu
+  var tried = 0;
+  while (tried < apiList.length) {
+    var apiKey = apiList[currentApiIndex];
+    document.getElementById("apiIndicator").textContent = "API: " + (currentApiIndex + 1) + "/" + apiList.length;
+    // Thử tất cả loại mạng với API hiện tại
+    for (var i = 0; i < techs.length; i++) {
+      var r = await callOneApi(apiKey, techs[i], mcc, mnc, lac, cid);
+      if (r.success) return r;  // tìm thấy → dừng ngay
+    }
+    // API này không ra kết quả → chuyển sang API tiếp theo
+    currentApiIndex = (currentApiIndex + 1) % apiList.length;
+    document.getElementById("apiIndicator").textContent = "API: " + (currentApiIndex + 1) + "/" + apiList.length;
+    tried++;
+    // Đã thử hết 1 vòng → dừng
+    if (currentApiIndex === startIdx) break;
+  }
+  return { success: false };
+}
+
+// ============================================================
+//  TRA CELL CHÍNH
+// ============================================================
+async function searchCells() {
+  resultsDiv.innerHTML = "";
+  resultData = [];
+  markersLayer.clearLayers();
+  btsLayer.clearLayers();
+  window.__allSites = [];   // gom tự động các trạm (BTS + hướng) của lần tra này
+
+  var raw = cellInputEl.value.trim();
+  if (!raw) { alert("Chưa nhập cell nào!"); return; }
+
+  var lines = raw.split("\n").map(function(s){return s.trim();}).filter(function(s){return s.length>0;});
+
+  var techs = [];
+  if (document.getElementById("auto").checked) techs = ["umts","lte","nbiot","nr"];
+  else ["umts","lte","nbiot","nr"].forEach(function(t){ if (document.getElementById(t).checked) techs.push(t); });
+  if (!techs.length) techs = ["umts","lte","nbiot","nr"];
+
+  var stt = 1;
+  var allBounds = [];
+
+  for (var li = 0; li < lines.length; li++) {
+    var line = lines[li];
+    var rawCell = line;
+
+    var parsed = parseCell(rawCell);
+    if (!parsed.success) {
+      var errDiv = document.createElement("div");
+      errDiv.className = "result-item";
+      errDiv.innerHTML = '<div class="result-text" style="color:#c62828">❌ Không nhận dạng: <b>' + rawCell + '</b></div>';
+      resultsDiv.appendChild(errDiv);
+      continue;
+    }
+
+    var mncOrig = parsed.parsed.mnc;
+    var lacOrig = parsed.parsed.lac;
+    var cidOrig = parsed.parsed.cellid;
+    var mccOrig = parsed.parsed.mcc;
+    var suffixOrig = getSuffix(parseInt(cidOrig));
+    var group = getGroup(suffixOrig);
+
+    // Không có nhóm → tra đơn
+    if (!group) {
+      var r = await lookupCell(mncOrig, lacOrig, cidOrig, mccOrig, techs);
+      var now = new Date().toLocaleString();
+      if (r.success) {
+        var d = r.data;
+        var info = {
+          cellIdFull: mccOrig+"."+mncOrig+"."+lacOrig+"."+cidOrig,
+          suffix: suffixOrig, isOriginal: true,
+          lat: d.lat, lon: d.lon, address: d.address, tech: r.tech, accuracy: d.accuracy
+        };
+        var marker = L.marker([d.lat,d.lon]).addTo(markersLayer);
+        info.marker = marker;
+        marker.bindPopup(buildOriginalCellPopup(info, [], null), {maxWidth:280});
+        L.circle([d.lat,d.lon],{radius:d.accuracy||300,color:'#e53935',fillOpacity:0.1,weight:1.5}).addTo(markersLayer);
+        resultsDiv.appendChild(createResultItem(stt, info, null, []));
+        resultData.push({ STT:stt, CellGốc:rawCell, CellTraCứu:info.cellIdFull, NgàyGiờTraCứu:now, Mạng:r.tech.toUpperCase(), Lat:d.lat, Lon:d.lon, KhoảngCách:d.accuracy, ĐịaChỉ:d.address||'', GoogleMaps:"https://www.google.com/maps?q="+d.lat+","+d.lon, MCC_MNC_LAC_CID:info.cellIdFull });
+        allBounds.push([d.lat,d.lon]); stt++;
+      } else {
+        var nf = document.createElement("div"); nf.className="result-item";
+        nf.innerHTML='<div class="result-text" style="color:#888">STT '+stt+' – Đã thử tất cả API, không tìm thấy: <b>'+rawCell+'</b></div>';
+        resultsDiv.appendChild(nf); stt++;
+      }
+      continue;
+    }
+
+    // ===== TRA CẢ NHÓM =====
+    var otherSuffixes = group.filter(function(s){ return s !== suffixOrig; });
+    var traverseOrder = [suffixOrig].concat(otherSuffixes);
+
+    var groupTitle = document.createElement("div");
+    groupTitle.className = "group-title";
+    groupTitle.textContent = '📡 Nhóm [' + group.join(', ') + '] – Cell gốc: ' + rawCell + ' (đuôi ' + suffixOrig + ')';
+    resultsDiv.appendChild(groupTitle);
+
+    var groupResults = [null, null, null];
+    var allInfoMap = {};
+
+    for (var ti = 0; ti < traverseOrder.length; ti++) {
+      var tSuffix = traverseOrder[ti];
+      var tCid = changeSuffix(cidOrig, tSuffix);
+      var tCellFull = mccOrig + "." + mncOrig + "." + lacOrig + "." + tCid;
+      var isOrig = (tSuffix === suffixOrig);
+
+      // lookupCell đã tự động xoay API nếu không tìm thấy
+      var r2 = await lookupCell(mncOrig, lacOrig, tCid, mccOrig, techs);
+      var now2 = new Date().toLocaleString();
+
+      if (r2.success) {
+        var d2 = r2.data;
+        var info2 = {
+          cellIdFull: tCellFull, suffix: tSuffix, isOriginal: isOrig,
+          lat: d2.lat, lon: d2.lon, address: d2.address, tech: r2.tech, accuracy: d2.accuracy
+        };
+
+        var cellColors = {};
+        cellColors[group[0]] = '#e53935';
+        cellColors[group[1]] = '#1565c0';
+        cellColors[group[2]] = '#2e7d32';
+        var mc = cellColors[tSuffix] || '#555';
+        var sizeW = isOrig ? '32px' : '26px';
+        var sizeH = isOrig ? '32px' : '26px';
+        var fontSize = isOrig ? '14px' : '12px';
+
+        var marker2 = L.marker([d2.lat, d2.lon], {
+          icon: L.divIcon({
+            className:'',
+            html: '<div style="background:'+mc+';color:#fff;width:'+sizeW+';height:'+sizeH+';border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:'+fontSize+';border:2px solid #fff;box-shadow:0 2px 7px rgba(0,0,0,0.45)'+(isOrig?';outline:2px solid '+mc:'')+'">'+tSuffix+'</div>',
+            iconAnchor: isOrig ? [16,16] : [13,13]
+          })
+        });
+        // Chỉ hiện marker cell gốc lên bản đồ, cell phụ ẩn đi
+        if(isOrig) marker2.addTo(markersLayer);
+        info2.marker = marker2;
+        marker2.bindPopup(buildSubCellPopup(info2, null), {maxWidth:280});
+        // Chỉ vẽ circle accuracy cho cell gốc
+        if(isOrig) L.circle([d2.lat,d2.lon],{radius:d2.accuracy||200,color:mc,fillOpacity:0.09,weight:1.5}).addTo(markersLayer);
+
+        allBounds.push([d2.lat, d2.lon]);
+        var gi = group.indexOf(tSuffix);
+        groupResults[gi] = info2;
+        allInfoMap[tSuffix] = info2;
+        resultData.push({ STT:stt, CellGốc:rawCell, CellTraCứu:tCellFull, NgàyGiờTraCứu:now2, Mạng:r2.tech.toUpperCase(), Lat:d2.lat, Lon:d2.lon, KhoảngCách:d2.accuracy, ĐịaChỉ:d2.address||'', GoogleMaps:"https://www.google.com/maps?q="+d2.lat+","+d2.lon, MCC_MNC_LAC_CID:tCellFull });
+        stt++;
+      } else {
+        var nf2 = document.createElement("div"); nf2.className="result-item";
+        nf2.innerHTML='<div class="result-text" style="color:#888">STT '+stt+' – Đã thử tất cả API, không tìm thấy đuôi '+tSuffix+': <b>'+tCellFull+'</b></div>';
+        resultsDiv.appendChild(nf2);
+        var gi2 = group.indexOf(tSuffix);
+        groupResults[gi2] = null;
+        stt++;
+      }
+    }
+
+    // ===== PHÂN TÍCH BTS =====
+    var btsInfo = analyzeBTS(groupResults, suffixOrig, group, mccOrig, mncOrig, lacOrig);
+
+    var origInfo = allInfoMap[suffixOrig];
+    var subInfos = Object.keys(allInfoMap)
+      .filter(function(k){ return parseInt(k) !== suffixOrig; })
+      .map(function(k){ return allInfoMap[k]; });
+
+    // ── GOM TỰ ĐỘNG cho chức năng giao quạt (chỉ cần LAC/Cell, không cần PCI/TA) ──
+    // Hướng lấy từ BTS tự tính của analyzeBTS; thiếu hướng (3 cell cùng điểm) → omni.
+    if (window.CellLocator && btsInfo && btsInfo.btsLat != null) {
+      var _site = {
+        siteLat: btsInfo.btsLat, siteLon: btsInfo.btsLon,
+        lat: btsInfo.btsLat, lon: btsInfo.btsLon,
+        azimuth: (typeof btsInfo.bearing === 'number') ? btsInfo.bearing : null,
+        beamwidth: 120, ta: null, range: 2000, radio: 'LTE',
+        label: (origInfo && origInfo.cellIdFull) ? origInfo.cellIdFull : rawCell
+      };
+      window.__lastSiteObs = _site;
+      if (!window.__allSites) window.__allSites = [];
+      window.__allSites.push(_site);
+    }
+
+    if (origInfo && origInfo.marker) {
+      origInfo.marker.setPopupContent(buildOriginalCellPopup(origInfo, subInfos, btsInfo), {maxWidth:300});
+    }
+    subInfos.forEach(function(sc) {
+      if (sc && sc.marker) {
+        sc.marker.setPopupContent(buildSubCellPopup(sc, btsInfo), {maxWidth:280});
+      }
+    });
+
+    groupResults.forEach(function(info2) {
+      if (!info2) return;
+      var isOrig2 = (info2.suffix === suffixOrig);
+      var subList = isOrig2 ? subInfos : [];
+      resultsDiv.appendChild(createResultItem(
+        resultData.findIndex(function(r){ return r.CellTraCứu === info2.cellIdFull; }) + 1,
+        info2, isOrig2 ? btsInfo : null, subList
+      ));
+    });
+
+    if (btsInfo) {
+      var btsBox = document.createElement("div");
+      btsBox.className = "bts-result-box";
+      btsBox.innerHTML =
+        '<h4>📡 BTS ước tính – ' + btsInfo.caseLabel + '</h4>' +
+        '<div><b>Vĩ độ:</b> ' + btsInfo.btsLat.toFixed(6) + ' &nbsp; <b>Kinh độ:</b> ' + btsInfo.btsLon.toFixed(6) + '</div>' +
+        '<span class="direction-badge">➡️ Cell gốc đuôi ' + suffixOrig + ': ' + btsInfo.dirText + '</span>' +
+        '<div style="font-size:11px;color:#555;margin-top:5px">👆 Nhấn để mở Google Maps BTS</div>';
+      btsBox.onclick = function() {
+        map.setView([btsInfo.btsLat, btsInfo.btsLon], 17);
+        window.open("https://www.google.com/maps?q=" + btsInfo.btsLat + "," + btsInfo.btsLon, '_blank');
+      };
+      groupTitle.insertAdjacentElement('afterend', btsBox);
+    }
+
+    // Zoom vừa màn hình sau khi ghim xong nhóm
+    var groupBounds = [];
+    groupResults.forEach(function(p) { if (p) groupBounds.push([p.lat, p.lon]); });
+    if (btsInfo) groupBounds.push([btsInfo.btsLat, btsInfo.btsLon]);
+    if (groupBounds.length === 1) map.setView(groupBounds[0], 16);
+    else if (groupBounds.length > 1) map.fitBounds(L.latLngBounds(groupBounds), { padding:[60,60], maxZoom:16 });
+
+  } // end for lines
+
+  if (resultData.length > 0) {
+    historyData.unshift({ time: new Date().toLocaleString(), data: JSON.parse(JSON.stringify(resultData)) });
+    if (historyData.length > 20) historyData = historyData.slice(0,20);
+    localStorage.setItem("cellHistory", JSON.stringify(historyData));
+  }
+}
+
+// ============================================================
+//  XÓA / XUẤT / LỊCH SỬ
+// ============================================================
+function clearResults() {
+  resultsDiv.innerHTML = "";
+  cellInputEl.value = "";
+  markersLayer.clearLayers();
+  btsLayer.clearLayers();
+  resultData = [];
+  bulkRoutePoints = [];
+  map.setView([16.047,108.206],6);
+  importStatus.style.display = 'none';
+  hideDuplicateSection();
+  // Xóa toàn bộ thông số nâng cao
+  ['advMCC','advMNC','advENB','advCID','advPCI','advTA','advRSRP','advRSRQ','advSNR','advTAC'].forEach(function(id){
+    var el = document.getElementById(id); if(el) el.value = '';
+  });
+  var op = document.getElementById('advOperator'); if(op) op.value = 'auto';
+}
+
+function exportExcel() {
+  if (!resultData || !resultData.length) { alert("Không có dữ liệu!"); return; }
+  var wb = XLSX.utils.book_new();
+  var headers = ["STT","Cell gốc","Cell tra cứu","Ngày giờ","Mạng","Lat","Lon","Khoảng cách","Địa chỉ","MCC.MNC.LAC.CID","Google Maps"];
+  var wsData = [headers];
+  resultData.forEach(function(r) {
+    wsData.push([r.STT,r.CellGốc,r.CellTraCứu,r.NgàyGiờTraCứu,r.Mạng,r.Lat,r.Lon,r.KhoảngCách,r.ĐịaChỉ,r.MCC_MNC_LAC_CID,r.GoogleMaps]);
+  });
+  var ws = XLSX.utils.aoa_to_sheet(wsData);
+  headers.forEach(function(h,i) {
+    var max = h.length;
+    wsData.slice(1).forEach(function(row) { max = Math.max(max, String(row[i]||'').length); });
+    if (!ws['!cols']) ws['!cols'] = [];
+    ws['!cols'][i] = { width: Math.min(max+2,50) };
+  });
+  XLSX.utils.book_append_sheet(wb, ws, "Cell Results");
+  XLSX.writeFile(wb, 'cell_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.xlsx');
+}
+
+function showHistory() {
+  if (!historyData || !historyData.length) { alert("Chưa có lịch sử!"); return; }
+  resultsDiv.innerHTML = "";
+  markersLayer.clearLayers(); btsLayer.clearLayers();
+  var sttG = 1, bounds = [];
+  historyData.forEach(function(item, idx) {
+    var title = document.createElement("div");
+    title.style.cssText = "font-weight:bold;font-size:12px;margin:10px 0 4px;padding:4px 8px;background:#e8eaf6;border-radius:6px";
+    title.textContent = '🔹 Lần tra ' + (idx+1) + ' – ' + item.time;
+    resultsDiv.appendChild(title);
+    item.data.forEach(function(row) {
+      var div = document.createElement("div"); div.className="result-item";
+      var txt='Cell gốc: '+row.CellGốc+'\nCell: '+row.CellTraCứu+'\nNgày: '+row.NgàyGiờTraCứu+'\nĐịa chỉ: '+row.ĐịaChỉ+'\nVĩ/Kinh: '+row.Lat+', '+row.Lon+'\nMạng: '+row.Mạng+'\nKhoảng cách: '+row.KhoảngCách+' m\nMCC.MNC.LAC.CID: '+row.MCC_MNC_LAC_CID;
+      var td=document.createElement("div"); td.className="result-text"; td.textContent='STT:'+sttG+'\n'+txt;
+      var ad=document.createElement("div"); ad.className="result-actions";
+      var gl=document.createElement("a"); gl.className="g-button"; gl.target="_blank"; gl.href="https://www.google.com/maps?q="+row.Lat+","+row.Lon; gl.innerHTML="G";
+      ad.appendChild(gl); div.appendChild(td); div.appendChild(ad);
+      div.onclick=function(){ if(!row.Lat||!row.Lon)return; markersLayer.clearLayers(); L.marker([row.Lat,row.Lon]).addTo(markersLayer).bindPopup('<b>Cell</b><br>'+txt.replace(/\n/g,'<br>')).openPopup(); L.circle([row.Lat,row.Lon],{radius:row.KhoảngCách||300,color:'red',fillOpacity:0.1}).addTo(markersLayer); map.setView([row.Lat,row.Lon],16); };
+      resultsDiv.appendChild(div);
+      if(row.Lat&&row.Lon){L.marker([row.Lat,row.Lon]).addTo(markersLayer);bounds.push([row.Lat,row.Lon]);}
+      sttG++;
+    });
+  });
+  if(bounds.length===1)map.setView(bounds[0],16);
+  else if(bounds.length>1)map.fitBounds(bounds,{padding:[40,40]});
+}
+
+function clearHistory() {
+  if (confirm("Xóa toàn bộ lịch sử?")) {
+    localStorage.removeItem("cellHistory"); historyData=[]; resultsDiv.innerHTML=""; alert("Đã xóa!");
+  }
+}
+
+// ============================================================
+//  IMPORT FILE
+// ============================================================
+fileInput.addEventListener("change", async function(e) {
+  var files = e.target.files;
+  if (!files.length) return;
+  showImportStatus("Đang xử lý...", false);
+  var allCells = [];
+  for (var fi=0;fi<files.length;fi++) {
+    try { var r = await processFile(files[fi]); allCells=allCells.concat(r.cells); }
+    catch(err) { showImportStatus('Lỗi: '+err.message, true); return; }
+  }
+  if (allCells.length) {
+    var unique = Array.from(new Set(allCells));
+    var ex = cellInputEl.value.split("\n").map(function(s){return s.trim();}).filter(function(s){return s.length>0;});
+    cellInputEl.value = Array.from(new Set(ex.concat(unique))).join("\n");
+    showImportStatus('Đã import '+unique.length+' cell', false);
+    checkDuplicates();
+  } else showImportStatus("Không tìm thấy cell nào", true);
+  fileInput.value="";
+});
+
+async function processFile(file) {
+  var fn=file.name.toLowerCase();
+  if(fn.endsWith('.txt')||fn.endsWith('.csv'))return processTextF(file);
+  if(fn.endsWith('.docx')||fn.endsWith('.doc'))return processWordF(file);
+  if(fn.endsWith('.xlsx')||fn.endsWith('.xls'))return processExcelF(file);
+  throw new Error("Định dạng không hỗ trợ");
+}
+async function processTextF(file) { return new Promise(function(res,rej){var r=new FileReader();r.onload=function(e){res(extractCells(e.target.result));};r.onerror=function(){rej(new Error("Lỗi đọc file"));};r.readAsText(file,'UTF-8');}); }
+async function processWordF(file) { return new Promise(function(res,rej){var r=new FileReader();r.onload=async function(e){try{var m=await mammoth.extractRawText({arrayBuffer:e.target.result});res(extractCells(m.value));}catch(err){rej(new Error("Lỗi Word: "+err.message));}};r.onerror=function(){rej(new Error("Lỗi đọc Word"));};r.readAsArrayBuffer(file);}); }
+async function processExcelF(file) {
+  return new Promise(function(res,rej){
+    var r=new FileReader();
+    r.onload=function(e){
+      try{
+        var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        var cells=[];
+        wb.SheetNames.forEach(function(sn){
+          XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:false,defval:''}).forEach(function(row){
+            if(Array.isArray(row))row.forEach(function(c){if(c)cells=cells.concat(extractCells(String(c)).cells);});
+          });
+        });
+        res({cells:cells,warnings:[]});
+      }catch(err){rej(new Error("Lỗi Excel: "+err.message));}
+    };
+    r.onerror=function(){rej(new Error("Lỗi đọc Excel"));};
+    r.readAsArrayBuffer(file);
+  });
+}
+function extractCells(text) {
+  var cells=[], pats=[/\b\d{3}\.\d{1,3}\.\d{1,8}\.\d{1,15}\b/g,/\b\d{1,3}\.\d{1,8}\.\d{1,15}\b/g,/\b\d{7,25}\b/g];
+  text.split(/[\r\n]+/).forEach(function(line){
+    var cl=line.trim();if(!cl)return;
+    for(var i=0;i<pats.length;i++){var m=cl.match(pats[i]);if(m){m.forEach(function(x){var r=parseCell(x);if(r.success)cells.push(r.cellId);});break;}}
+  });
+  return {cells:Array.from(new Set(cells)),warnings:[]};
+}
+
+// ============================================================
+//  DUPLICATE
+// ============================================================
+function checkDuplicates() {
+  var lines=cellInputEl.value.split("\n").map(function(s){return s.trim();}).filter(function(s){return s.length>0;});
+  if(!lines.length){hideDuplicateSection();return;}
+  var cnt={};
+  lines.forEach(function(l){cnt[l]=(cnt[l]||0)+1;});
+  var dups=Object.keys(cnt).filter(function(k){return cnt[k]>1;});
+  if(!dups.length){hideDuplicateSection();return;}
+  duplicateSec.classList.add('show');
+  duplicateCnt.textContent=dups.length;
+  duplicateList.innerHTML=dups.map(function(d){return '<div style="padding:2px 0;border-bottom:1px dotted #eee">'+d+' <span style="color:#f44336;font-weight:bold">('+cnt[d]+' lần)</span></div>';}).join('');
+}
+function removeDuplicates() {
+  var seen={},unique=[];
+  cellInputEl.value.split("\n").map(function(s){return s.trim();}).filter(function(s){return s.length>0;}).forEach(function(l){if(!seen[l]){seen[l]=true;unique.push(l);}});
+  cellInputEl.value=unique.join("\n");hideDuplicateSection();
+  showImportStatus('Xóa trùng xong. Còn '+unique.length+' dòng.',false);
+}
+function keepDuplicates() {
+  var cnt={};
+  var lines=cellInputEl.value.split("\n").map(function(s){return s.trim();}).filter(function(s){return s.length>0;});
+  lines.forEach(function(l){cnt[l]=(cnt[l]||0)+1;});
+  var dups=lines.filter(function(l){return cnt[l]>1;});
+  cellInputEl.value=dups.join("\n");hideDuplicateSection();
+  showImportStatus('Giữ '+dups.length+' dòng trùng.',false);
+}
+function hideDuplicateSection(){duplicateSec.classList.remove('show');}
+function debounce(fn,ms){var t;return function(){var a=arguments;clearTimeout(t);t=setTimeout(function(){fn.apply(null,a);},ms);};}
+cellInputEl.addEventListener('input',debounce(checkDuplicates,400));
+cellInputEl.addEventListener('paste',function(){setTimeout(checkDuplicates,100);});
+
+// ============================================================
+//  THÔNG SỐ NÂNG CAO – TÍCH HỢP SÂU VỚI CODE CŨ
+//  Logic: không thông số → tra bình thường (code cũ giữ nguyên)
+//         có thông số    → sau khi tra, dùng BTS tìm được từ code cũ
+//                          + PCI (hướng sector theo nhà mạng thực tế VN)
+//                          + TA  (khoảng cách) → vẽ cung & khoanh vùng UE
+// ============================================================
+
+function toggleAdvPanel() {
+  var p = document.getElementById('advParamPanel');
+  var a = document.getElementById('advArrow');
+  if (p.style.display === 'none') { p.style.display='block'; a.textContent='▼'; }
+  else { p.style.display='none'; a.textContent='▶'; }
+}
+
+// ============================================================
+//  CƠ SỞ DỮ LIỆU PCI TỪNG NHÀ MẠNG VIỆT NAM
+//
+//  Nguyên lý chuẩn 3GPP TS 36.211:
+//    PCI  = PSS + 3 × SSS   (0 ≤ PCI ≤ 503)
+//    PSS  = PCI mod 3        → xác định SECTOR (0, 1, 2)
+//    SSS  = floor(PCI / 3)   → phân biệt BTS lân cận (0–167)
+//
+//  Hướng sector (azimuth) từng nhà mạng:
+//  ┌───────────────┬───────┬────────────┬───────────┬───────────┐
+//  │ Nhà mạng      │ PSS=0 │   PSS=1    │   PSS=2   │ Ghi chú   │
+//  ├───────────────┼───────┼────────────┼───────────┼───────────┤
+//  │ Viettel       │   0°  │   120°     │   240°    │ Chuẩn TK  │
+//  │ Mobifone      │  30°  │   150°     │   270°    │ Xoay +30° │
+//  │ Vinaphone     │   0°  │   120°     │   240°    │ Chuẩn TK  │
+//  │ Vietnamobile  │   0°  │   120°     │   240°    │ Chuẩn TK  │
+//  │ Reddi/Gmobile │   0°  │   120°     │   240°    │ Chuẩn TK  │
+//  └───────────────┴───────┴────────────┴───────────┴───────────┘
+//
+//  Quy ước sector Việt Nam (chuẩn Thiết kế mạng):
+//    Sector 1 (PSS=0): Bắc       (~  0°)  → phủ phía Bắc
+//    Sector 2 (PSS=1): Đông Nam  (~120°)  → phủ phía Đông Nam
+//    Sector 3 (PSS=2): Tây Nam   (~240°)  → phủ phía Tây Nam
+//
+//  Mobifone được biết dùng offset +30° so với chuẩn (xác nhận qua
+//  đo đạc thực tế và tài liệu thiết kế mạng nội bộ).
+// ============================================================
+
+var VN_OPERATOR_PCI = {
+  'viettel': {
+    name: 'Viettel', mnc: '04', color: '#c62828', logo: '🔴',
+    // PSS 0→Bắc(0°)  PSS 1→Đông Nam(120°)  PSS 2→Tây Nam(240°)
+    sectors: [
+      { pss:0, bearing:0,   dir:'Bắc',      color:'#e53935', az:'0°'   },
+      { pss:1, bearing:120, dir:'Đông Nam',  color:'#c62828', az:'120°' },
+      { pss:2, bearing:240, dir:'Tây Nam',   color:'#b71c1c', az:'240°' }
+    ],
+    pciZones:[
+      {min:0,  max:83,  zone:'Nội thành mật độ cao'},
+      {min:84, max:167, zone:'Ngoại ô / đô thị vừa'},
+      {min:168,max:251, zone:'Thị xã / huyện'},
+      {min:252,max:335, zone:'Nông thôn'},
+      {min:336,max:419, zone:'Xa lộ / khu công nghiệp'},
+      {min:420,max:503, zone:'Vùng núi / biên giới / indoor'}
+    ],
+    note:'Viettel chuẩn thiết kế VN: PSS0=Bắc, PSS1=ĐôngNam, PSS2=TâyNam'
+  },
+  'mobifone': {
+    name: 'Mobifone', mnc: '01', color: '#1565c0', logo: '🔵',
+    // Mobifone xoay +30° so với chuẩn 3GPP
+    // PSS 0→Đông Bắc(30°)  PSS 1→Nam(150°)  PSS 2→Tây(270°)
+    sectors: [
+      { pss:0, bearing:30,  dir:'Đông Bắc', color:'#1976d2', az:'30°'  },
+      { pss:1, bearing:150, dir:'Nam',       color:'#1565c0', az:'150°' },
+      { pss:2, bearing:270, dir:'Tây',       color:'#0d47a1', az:'270°' }
+    ],
+    pciZones:[
+      {min:0,  max:83,  zone:'TP.HCM / Hà Nội nội thành'},
+      {min:84, max:167, zone:'Tỉnh thành lớn (Đà Nẵng, Cần Thơ...)'},
+      {min:168,max:251, zone:'Thị xã / huyện lỵ'},
+      {min:252,max:335, zone:'Nông thôn'},
+      {min:336,max:419, zone:'Miền núi / vùng sâu'},
+      {min:420,max:503, zone:'Indoor / hotspot đặc biệt'}
+    ],
+    note:'Mobifone offset +30°: PSS0=ĐôngBắc(30°), PSS1=Nam(150°), PSS2=Tây(270°)'
+  },
+  'vinaphone': {
+    name: 'Vinaphone', mnc: '02', color: '#2e7d32', logo: '🟢',
+    // PSS 0→Bắc(0°)  PSS 1→Đông Nam(120°)  PSS 2→Tây Nam(240°)
+    sectors: [
+      { pss:0, bearing:0,   dir:'Bắc',      color:'#388e3c', az:'0°'   },
+      { pss:1, bearing:120, dir:'Đông Nam',  color:'#2e7d32', az:'120°' },
+      { pss:2, bearing:240, dir:'Tây Nam',   color:'#1b5e20', az:'240°' }
+    ],
+    pciZones:[
+      {min:0,  max:71,  zone:'Miền Bắc nội thành'},
+      {min:72, max:143, zone:'Miền Trung'},
+      {min:144,max:215, zone:'Miền Nam / TP.HCM'},
+      {min:216,max:287, zone:'Đô thị vừa / tỉnh'},
+      {min:288,max:359, zone:'Nông thôn'},
+      {min:360,max:503, zone:'Vùng sâu / biên giới / hải đảo'}
+    ],
+    note:'Vinaphone chuẩn 3GPP: PSS0=Bắc, PSS1=ĐôngNam, PSS2=TâyNam'
+  },
+  'vietnamobile': {
+    name: 'Vietnamobile', mnc: '05', color: '#f57c00', logo: '🟠',
+    // Chuẩn 3GPP, PCI phổ biến 0-251
+    sectors: [
+      { pss:0, bearing:0,   dir:'Bắc',      color:'#fb8c00', az:'0°'   },
+      { pss:1, bearing:120, dir:'Đông Nam',  color:'#f57c00', az:'120°' },
+      { pss:2, bearing:240, dir:'Tây Nam',   color:'#e65100', az:'240°' }
+    ],
+    pciZones:[
+      {min:0,  max:83,  zone:'Đô thị lớn (HCM, HN, Đà Nẵng)'},
+      {min:84, max:167, zone:'Tỉnh thành'},
+      {min:168,max:251, zone:'Huyện / nông thôn'},
+      {min:252,max:503, zone:'Ít dùng / dự phòng'}
+    ],
+    note:'Vietnamobile dùng chuẩn 3GPP, PCI thường trong dải 0–251'
+  },
+  'reddi': {
+    name: 'Reddi (Gmobile)', mnc: '07', color: '#6a1b9a', logo: '🟣',
+    // Chuẩn 3GPP
+    sectors: [
+      { pss:0, bearing:0,   dir:'Bắc',      color:'#8e24aa', az:'0°'   },
+      { pss:1, bearing:120, dir:'Đông Nam',  color:'#7b1fa2', az:'120°' },
+      { pss:2, bearing:240, dir:'Tây Nam',   color:'#6a1b9a', az:'240°' }
+    ],
+    pciZones:[
+      {min:0,  max:167, zone:'Vùng phủ sóng chính'},
+      {min:168,max:335, zone:'Mở rộng'},
+      {min:336,max:503, zone:'Dự phòng'}
+    ],
+    note:'Reddi/Gmobile dùng chuẩn 3GPP cơ bản'
+  },
+  'auto': {
+    name: 'Chuẩn 3GPP (tự động)', mnc: '', color: '#546e7a', logo: '📶',
+    sectors: [
+      { pss:0, bearing:0,   dir:'Bắc',      color:'#e53935', az:'0°'   },
+      { pss:1, bearing:120, dir:'Đông Nam',  color:'#1565c0', az:'120°' },
+      { pss:2, bearing:240, dir:'Tây Nam',   color:'#2e7d32', az:'240°' }
+    ],
+    pciZones:[], note:'Chuẩn 3GPP: PSS0=Bắc(0°), PSS1=ĐôngNam(120°), PSS2=TâyNam(240°)'
+  }
+};
+
+// Nhận diện nhà mạng từ MNC
+function detectOperatorByMnc(mnc) {
+  var m = String(parseInt(mnc)||0);
+  if(m==='4') return 'viettel';
+  if(m==='1') return 'mobifone';
+  if(m==='2') return 'vinaphone';
+  if(m==='5') return 'vietnamobile';
+  if(m==='7') return 'reddi';
+  return 'auto';
+}
+
+// Lấy vùng PCI theo nhà mạng
+function getPciZone(opKey, pci) {
+  var op = VN_OPERATOR_PCI[opKey] || VN_OPERATOR_PCI['auto'];
+  for(var i=0;i<op.pciZones.length;i++){
+    if(pci>=op.pciZones[i].min && pci<=op.pciZones[i].max) return op.pciZones[i].zone;
+  }
+  return null;
+}
+
+// Tính sector từ PCI + nhà mạng → trả về {bearing, dir, color, pss, sss, zone, ...}
+function pciToSector(pci, opKey) {
+  var key = opKey || document.getElementById('advOperator').value || 'auto';
+  var op  = VN_OPERATOR_PCI[key] || VN_OPERATOR_PCI['auto'];
+  var pss = pci % 3;
+  var sss = Math.floor(pci / 3);
+  var sec = op.sectors[pss];
+  return {
+    bearing:  sec.bearing,
+    dir:      sec.dir,
+    az:       sec.az,
+    color:    sec.color,
+    opColor:  op.color,
+    opName:   op.name,
+    opLogo:   op.logo,
+    pss:      pss,
+    sss:      sss,
+    zone:     getPciZone(key, pci),
+    note:     op.note,
+    label:    op.logo+' '+op.name+' – Sector '+(pss+1)+' '+sec.dir+' ('+sec.az+')'
+  };
+}
+
+// Khoảng cách từ TA
+function taToDistance(ta) { return Math.round(ta * 78.125); }
+
+// Chất lượng RSRP
+function rsrpQuality(rsrp) {
+  if(rsrp>=-80)  return {text:'Tốt',        color:'#2e7d32', pct:100};
+  if(rsrp>=-90)  return {text:'Khá',         color:'#558b2f', pct:80 };
+  if(rsrp>=-100) return {text:'Trung bình',  color:'#f57c00', pct:55 };
+  if(rsrp>=-110) return {text:'Yếu',         color:'#e53935', pct:30 };
+  return             {text:'Rất yếu',    color:'#b71c1c', pct:10 };
+}
+
+// Đọc thông số nâng cao từ UI
+function getAdvParams() {
+  function v(id){ var x=document.getElementById(id); return (!x||x.value.trim()==='')?null:Number(x.value.trim()); }
+  function s(id){ var x=document.getElementById(id); return (!x||x.value.trim()==='')?null:x.value.trim(); }
+  // MCC mặc định 452 (Việt Nam) nếu để trống
+  function vMcc(){ var x=document.getElementById('advMCC'); return (!x||x.value.trim()==='')?452:Number(x.value.trim()); }
+  var p = {
+    mcc: vMcc(), mnc: v('advMNC'),
+    enb: v('advENB'), cid: v('advCID'),
+    pci: v('advPCI'), ta:  v('advTA'),
+    rsrp:v('advRSRP'),rsrq:v('advRSRQ'),
+    snr: v('advSNR'), tac: v('advTAC')
+  };
+  // Có đủ thông số để tự tính Cell ID LTE: MCC (mặc định 452) + MNC + TAC + eNB + CID
+  p.canBuildCell = (p.mnc!==null && p.tac!==null && p.enb!==null && p.cid!==null);
+  // Có bất kỳ thông số nào cần xử lý nâng cao
+  p.hasAny = function(){ return p.pci!==null||p.ta!==null||p.rsrp!==null||p.canBuildCell; };
+  return p;
+}
+
+// LTE Cell ID từ eNB + local CID
+function calcLteCellId(enb, localCid) { return enb*256+localCid; }
+
+// ── VẼ CUNG TA: vòng tròn bán kính TA quanh BTS ──────────────
+function drawTACircle(btsLat, btsLon, distM, color) {
+  L.circle([btsLat, btsLon], {
+    radius: distM, color: color, fillColor: color,
+    fillOpacity: 0.05, weight: 2.5, dashArray: '8,5'
+  }).addTo(btsLayer)
+    .bindTooltip('📏 Vòng TA ≈ '+distM+'m từ BTS', {permanent:false, direction:'top'});
+}
+
+// ── VẼ SECTOR CUNG SECTOR 120° THEO HƯỚNG PCI ────────────────
+function drawPciSector(btsLat, btsLon, bearing, distM, color, label) {
+  // Nếu có TA dùng khoảng cách TA làm bán kính (giới hạn hợp lý 250–2500m)
+  var r = distM ? Math.min(Math.max(distM, 250), 2500) : 500;
+  drawSector(btsLat, btsLon, bearing, r, color, label);
+}
+
+// ── VẼ ĐIỂM UE ƯỚC TÍNH + LINE BTS→UE ───────────────────────
+function drawUEPoint(btsLat, btsLon, bearing, distM, sector, adv, op) {
+  var uePt = destPoint(btsLat, btsLon, bearing, distM);
+  // Đường từ BTS → UE
+  L.polyline([[btsLat,btsLon], uePt], {
+    color: '#ff6f00', weight: 3, dashArray: '7,4', opacity: 0.9
+  }).addTo(btsLayer)
+    .bindTooltip('BTS → UE: '+distM+'m ('+sector.dir+', '+sector.az+')', {permanent:false});
+  // Marker UE
+  L.marker(uePt, {
+    icon: L.divIcon({
+      className:'',
+      html:'<div style="background:#ff6f00;color:#fff;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:bold;box-shadow:0 2px 7px rgba(0,0,0,0.45);white-space:nowrap">📱 UE ~'+distM+'m</div>',
+      iconAnchor:[40,12]
+    }), zIndexOffset:3000
+  }).addTo(btsLayer).bindPopup(
+    '<div class="bts-popup">' +
+    '<div class="bts-title" style="color:#ff6f00">📱 Vị trí UE ước tính</div>' +
+    '<b>Nhà mạng:</b> '+op.logo+' '+op.name+'<br>'+
+    '<b>PCI:</b> '+adv.pci+' → PSS='+sector.pss+' → '+sector.dir+' ('+sector.az+')<br>'+
+    '<b>TA:</b> '+adv.ta+' → '+distM+'m (~'+(distM/1000).toFixed(2)+'km)<br>'+
+    '<b>Lat:</b> '+uePt[0].toFixed(6)+'<br>'+
+    '<b>Lon:</b> '+uePt[1].toFixed(6)+'<br>'+
+    '<a href="https://www.google.com/maps?q='+uePt[0]+','+uePt[1]+'" target="_blank">🗺️ Mở Google Maps UE</a>'+
+    '</div>'
+  );
+  return uePt;
+}
+
+// ── TẠO BOX PHÂN TÍCH KẾT QUẢ ────────────────────────────────
+function createAdvResultBox(adv, btsLat, btsLon, sector, distM, uePt) {
+  var op = VN_OPERATOR_PCI[document.getElementById('advOperator').value||'auto'] || VN_OPERATOR_PCI['auto'];
+  var box = document.createElement('div');
+  box.className = 'adv-result-box';
+  box.style.borderColor = op.color;
+
+  var html = '<h4 style="margin:0 0 8px;color:'+op.color+';font-size:13px">'+
+    '🎯 Phân tích thông số nâng cao – '+op.logo+' '+op.name+'</h4>';
+
+  // ── PCI ──
+  if(adv.pci !== null && sector) {
+    var zone = getPciZone(document.getElementById('advOperator').value||'auto', adv.pci);
+    html += '<div style="background:'+op.color+'18;border-left:3px solid '+op.color+';border-radius:7px;padding:7px 9px;margin-bottom:7px">';
+    html += '<div style="font-weight:bold;font-size:12px;color:'+op.color+'">📡 PCI = '+adv.pci+'</div>';
+    html += '<div style="font-size:11px;margin-top:4px;line-height:1.7">';
+    html += '• PSS = '+adv.pci+' mod 3 = <b>'+sector.pss+'</b> → <span style="background:'+sector.color+';color:#fff;border-radius:5px;padding:1px 8px">Sector '+(sector.pss+1)+' – '+sector.dir+' ('+sector.az+')</span><br>';
+    html += '• SSS = ⌊'+adv.pci+'/3⌋ = <b>'+sector.sss+'</b> → Nhóm BTS #'+sector.sss+'<br>';
+    if(zone) html += '• Vùng PCI: <b>'+zone+'</b><br>';
+    html += '• Hướng anten: <b>~'+sector.bearing+'° ('+sector.dir+')</b><br>';
+    html += '<i style="color:#888;font-size:10px">'+op.note+'</i>';
+    html += '</div>';
+
+    // Bảng so sánh 5 nhà mạng
+    html += '<div style="margin-top:6px">';
+    html += '<div style="font-size:10px;font-weight:bold;color:#666;margin-bottom:3px">So sánh PCI='+adv.pci+' giữa các nhà mạng (PSS='+sector.pss+'):</div>';
+    html += '<table style="width:100%;font-size:10px;border-collapse:collapse">';
+    html += '<tr style="background:#f5f5f5"><th style="padding:2px 4px;text-align:left">Nhà mạng</th><th style="padding:2px;text-align:center">Sector</th><th style="padding:2px;text-align:center">Hướng</th></tr>';
+    ['viettel','mobifone','vinaphone','vietnamobile','reddi'].forEach(function(k){
+      var o=VN_OPERATOR_PCI[k], s=o.sectors[sector.pss];
+      var active = (k===(document.getElementById('advOperator').value||'auto'));
+      html += '<tr style="'+(active?'background:'+o.color+'22;font-weight:bold':'')+'">';
+      html += '<td style="padding:2px 4px">'+o.logo+' '+o.name+(active?' ✓':'')+'</td>';
+      html += '<td style="padding:2px;text-align:center"><span style="background:'+s.color+';color:#fff;border-radius:4px;padding:0 6px">'+s.dir+'</span></td>';
+      html += '<td style="padding:2px;text-align:center"><b>'+s.az+'</b></td>';
+      html += '</tr>';
+    });
+    html += '</table></div></div>';
+  }
+
+  // ── TA + khoảng cách ──
+  if(adv.ta !== null) {
+    var taQ = distM<300?'🟢 Rất gần':distM<1000?'🟡 Gần':distM<3000?'🟠 Trung bình':'🔴 Xa';
+    html += '<div style="padding:5px 8px;background:#e3f2fd;border-radius:6px;margin-bottom:5px;border-left:3px solid #1976d2">';
+    html += '📏 <b>TA='+adv.ta+'</b> × 78.125m = <b>'+distM+'m</b> (~'+(distM/1000).toFixed(2)+'km) '+taQ+'</div>';
+  }
+
+  // ── Vị trí UE ──
+  if(uePt && adv.pci!==null && adv.ta!==null) {
+    html += '<div style="padding:6px 8px;background:#fff8e1;border-radius:6px;margin-bottom:5px;border-left:3px solid #ff6f00;font-size:11px">';
+    html += '🎯 <b>Vị trí UE ước tính</b> (BTS + PCI + TA):<br>';
+    html += 'BTS('+btsLat.toFixed(5)+', '+btsLon.toFixed(5)+') → '+sector.dir+' '+distM+'m<br>';
+    html += 'Lat: <b>'+uePt[0].toFixed(6)+'</b>, Lon: <b>'+uePt[1].toFixed(6)+'</b><br>';
+    html += '<a href="https://www.google.com/maps?q='+uePt[0]+','+uePt[1]+'" target="_blank" style="color:#e65100;font-weight:bold">🗺️ Mở Google Maps vị trí UE</a>';
+    html += '</div>';
+  }
+
+  // ── Tín hiệu ──
+  if(adv.rsrp !== null) {
+    var q = rsrpQuality(adv.rsrp);
+    html += '<div style="margin-bottom:4px">📶 <b>RSRP='+adv.rsrp+' dBm</b> → <b style="color:'+q.color+'">'+q.text+'</b>';
+    html += '<div style="background:#eee;height:7px;border-radius:4px;margin:2px 0"><div style="background:'+q.color+';height:7px;border-radius:4px;width:'+q.pct+'%"></div></div></div>';
+  }
+  if(adv.rsrq!==null){
+    var rt=adv.rsrq>=-10?'✅ Tốt':adv.rsrq>=-15?'⚠️ TB':'❌ Xấu';
+    html+='<div style="font-size:11px;margin-bottom:2px">📊 <b>RSRQ='+adv.rsrq+' dB</b> '+rt+'</div>';
+  }
+  if(adv.snr!==null){
+    var st=adv.snr>=20?'✅ Xuất sắc':adv.snr>=10?'✅ Tốt':adv.snr>=3?'⚠️ TB':'❌ Nhiễu';
+    html+='<div style="font-size:11px;margin-bottom:2px">🔊 <b>SNR='+adv.snr+' dB</b> '+st+'</div>';
+  }
+  if(adv.enb!==null && adv.cid!==null){
+    html+='<div style="font-size:11px;margin-bottom:2px">🏗️ <b>eNB='+adv.enb+'</b>, CID=<b>'+adv.cid+'</b> → LTE Cell ID=<b>'+calcLteCellId(adv.enb,adv.cid)+'</b></div>';
+  }
+  if(adv.tac!==null) html+='<div style="font-size:11px">📍 TAC=<b>'+adv.tac+'</b></div>';
+
+  box.innerHTML = html;
+  return box;
+}
+
+// ── HÀM CHÍNH: gọi sau analyzeBTS để vẽ lớp PCI/TA lên BTS đã tìm được ──
+function applyAdvancedOverlay(adv, btsLat, btsLon, opKey) {
+  // Xác định nhà mạng
+  var key = opKey || document.getElementById('advOperator').value || 'auto';
+  var sector = (adv.pci !== null) ? pciToSector(adv.pci, key) : null;
+  var distM  = (adv.ta  !== null) ? taToDistance(adv.ta) : null;
+
+  // 1. Vẽ vòng TA quanh BTS (khoanh vùng khoảng cách)
+  if(distM !== null) {
+    drawTACircle(btsLat, btsLon, distM, sector ? sector.color : '#ff6f00');
+  }
+
+  // 2. Vẽ sector PCI từ BTS (hướng anten theo nhà mạng)
+  if(sector !== null) {
+    drawPciSector(btsLat, btsLon, sector.bearing, distM, sector.color,
+      'PCI '+adv.pci+' PSS='+sector.pss+' '+sector.dir+' ('+sector.az+')');
+  }
+
+  // 3. Vẽ điểm UE ước tính (giao điểm hướng sector + vòng TA)
+  var uePt = null;
+  if(sector !== null && distM !== null) {
+    var op = VN_OPERATOR_PCI[key] || VN_OPERATOR_PCI['auto'];
+    uePt = drawUEPoint(btsLat, btsLon, sector.bearing, distM, sector, adv, op);
+  }
+
+  // 4. NÂNG CAO: tô vùng xác suất = quạt 120° ∩ vành TA (cung), thay vì chỉ 1 điểm
+  //    Lưu trạm để gom: cần có PCI (ra hướng) HOẶC TA (ra vành) là gom được.
+  if(window.CellLocator && (sector !== null || distM !== null)) {
+    var obsOne = { siteLat:btsLat, siteLon:btsLon, lat:btsLat, lon:btsLon,
+                   azimuth:(sector ? sector.bearing : null), beamwidth:120,
+                   ta:(adv.ta!=null?adv.ta:null), radio:'LTE',
+                   signal:(adv.rsrp!=null?adv.rsrp:null) };
+    window.__lastSiteObs = obsOne;   // để gom cho chế độ giao quạt nhiều trạm
+    if(distM !== null) {
+      try {
+        var gridOne = CellLocator.gridOverlapFix([obsOne], { step: Math.max(12, distM/90) });
+        CellLocator.drawHeat(btsLayer, gridOne);
+      } catch(e){}
+    }
+  }
+
+  return { sector: sector, distM: distM, uePt: uePt };
+}
+
+// ============================================================
+//  GIAO QUẠT NHIỀU TRẠM (định vị thuê bao khi có ≥2 trạm khác nhau)
+//  Dùng lớp riêng __triLayer, KHÔNG bị xoá khi tra cell mới.
+// ============================================================
+window.__triObs = [];
+window.__triLayer = null;
+function gomTramGiaoQuat() {
+  if(!window.__lastSiteObs) { alert('Hãy bấm "Tra Cell + BTS" cho một cell trước (chỉ cần LAC/Cell, không cần PCI/TA).'); return; }
+  window.__triObs.push(Object.assign({}, window.__lastSiteObs));
+  alert('✅ Đã gom ' + window.__triObs.length + ' trạm: ' + (window.__lastSiteObs.label||'') +
+        '\nTra cell trạm khác rồi gom tiếp, hoặc bấm "🎯 Giao quạt N trạm".');
+}
+function giaoQuatNhieuTram() {
+  if(!window.CellLocator) return;
+  // Ưu tiên trạm gom thủ công; nếu chưa gom → tự lấy tất cả trạm của lần tra gần nhất
+  var obsArr = (window.__triObs && window.__triObs.length) ? window.__triObs : (window.__allSites || []);
+  if(obsArr.length < 1) { alert('Chưa có trạm nào. Hãy "Tra Cell + BTS" (có thể dán nhiều cell cùng lúc) rồi bấm lại.'); return; }
+  if(obsArr.length < 2) {
+    if(!confirm('Chỉ có 1 trạm → kết quả chỉ là 1 quạt, chưa giao được điểm.\nVẫn vẽ chứ?')) return;
+  }
+  if(!window.__triLayer) window.__triLayer = L.layerGroup().addTo(map);
+  window.__triLayer.clearLayers();
+  var maxR = 0;
+  obsArr.forEach(function(o){ var t=CellLocator.taToMeters(o.ta,o.radio); maxR=Math.max(maxR, t?t.max:(o.range||1500)); });
+  var grid = CellLocator.gridOverlapFix(obsArr, { step: Math.max(15, maxR/90) });
+  CellLocator.drawHeat(window.__triLayer, grid);
+  obsArr.forEach(function(o){
+    var t = CellLocator.taToMeters(o.ta,o.radio);
+    CellLocator.drawSector(window.__triLayer, {lat:o.siteLat,lon:o.siteLon}, o.azimuth, 120,
+      (t?t.max:(o.range||1500)), {color:'#7b1fa2',weight:1,fillColor:'#7b1fa2',fillOpacity:0.07});
+  });
+  if(grid.lat != null){
+    CellLocator.drawFix(window.__triLayer, grid.lat, grid.lon, 60);
+    map.setView([grid.lat, grid.lon], 16);
+  }
+}
+function xoaGiaoQuat() {
+  if(window.__triLayer) window.__triLayer.clearLayers();
+  window.__triObs = [];
+  alert('🗑️ Đã xoá danh sách trạm giao quạt.');
+}
+
+// ============================================================
+//  TRA CELL (KHÔNG TRA BTS/HƯỚNG)
+// ============================================================
+async function searchCellOnly() {
+  resultsDiv.innerHTML = "";
+  resultData = [];
+  bulkRoutePoints = [];
+  markersLayer.clearLayers();
+  btsLayer.clearLayers();
+
+  var raw = cellInputEl.value.trim();
+  if (!raw) { alert("Chưa nhập cell nào!"); return; }
+
+  var lines = raw.split("\n").map(function(s){return s.trim();}).filter(function(s){return s.length>0;});
+
+  var techs = [];
+  if (document.getElementById("auto").checked) techs = ["umts","lte","nbiot","nr"];
+  else ["umts","lte","nbiot","nr"].forEach(function(t){ if (document.getElementById(t).checked) techs.push(t); });
+  if (!techs.length) techs = ["umts","lte","nbiot","nr"];
+
+  var stt = 1;
+  var allBounds = [];
+
+  for (var li = 0; li < lines.length; li++) {
+    var line = lines[li];
+    var parsed = parseCell(line);
+    if (!parsed.success) {
+      var errDiv = document.createElement("div");
+      errDiv.className = "result-item";
+      errDiv.innerHTML = '<div class="result-text" style="color:#c62828">❌ Không nhận dạng: <b>' + line + '</b></div>';
+      resultsDiv.appendChild(errDiv);
+      continue;
+    }
+
+    var mncO = parsed.parsed.mnc;
+    var lacO = parsed.parsed.lac;
+    var cidO = parsed.parsed.cellid;
+    var mccO = parsed.parsed.mcc;
+    var sufO = getSuffix(parseInt(cidO));
+    var cellFull = mccO + "." + mncO + "." + lacO + "." + cidO;
+
+    var r = await lookupCell(mncO, lacO, cidO, mccO, techs);
+    var now = new Date().toLocaleString();
+
+    if (r.success) {
+      var d = r.data;
+      var info = {
+        cellIdFull: cellFull,
+        suffix: sufO, isOriginal: true,
+        lat: d.lat, lon: d.lon, address: d.address, tech: r.tech, accuracy: d.accuracy
+      };
+      var marker = L.marker([d.lat, d.lon]).addTo(markersLayer);
+      info.marker = marker;
+      var gUrl = "https://www.google.com/maps?q=" + d.lat + "," + d.lon;
+      marker.bindPopup(
+        '<div class="cell-popup">' +
+        '<div class="popup-title">📍 ' + cellFull + '</div>' +
+        '<b>Vĩ độ:</b> ' + d.lat.toFixed(6) + '<br>' +
+        '<b>Kinh độ:</b> ' + d.lon.toFixed(6) + '<br>' +
+        '<b>Địa chỉ:</b> ' + (d.address || '-') + '<br>' +
+        '<b>Mạng:</b> ' + r.tech.toUpperCase() + '<br>' +
+        '<b>Khoảng cách:</b> ' + (d.accuracy || '-') + ' m<br>' +
+        '<a href="' + gUrl + '" target="_blank">🗺️ Mở Google Maps</a>' +
+        '</div>', { maxWidth: 280 }
+      );
+      L.circle([d.lat, d.lon], { radius: d.accuracy || 300, color: '#2196F3', fillOpacity: 0.1, weight: 1.5 }).addTo(markersLayer);
+
+      // Result item
+      var item = document.createElement("div");
+      item.className = "result-item";
+      item.style.cssText = "border-left:4px solid #2196F3";
+      var lines2 = [
+        '📍 Cell: ' + cellFull,
+        'Vĩ/Kinh: ' + d.lat.toFixed(6) + ', ' + d.lon.toFixed(6),
+        'Địa chỉ: ' + (d.address || '-'),
+        'Mạng: ' + r.tech.toUpperCase(),
+        'Khoảng cách: ' + (d.accuracy || '-') + ' m'
+      ];
+      var textDiv = document.createElement("div");
+      textDiv.className = "result-text";
+      textDiv.innerHTML = '<b>STT ' + stt + '</b>\n' + lines2.join('\n');
+      var actDiv = document.createElement("div");
+      actDiv.className = "result-actions";
+      var gLink = document.createElement("a");
+      gLink.className = "g-button"; gLink.target = "_blank";
+      gLink.href = gUrl; gLink.innerHTML = "G";
+      actDiv.appendChild(gLink);
+      item.appendChild(textDiv);
+      item.appendChild(actDiv);
+      var _info = info;
+      item.addEventListener('click', function(e) {
+        if (e.target === gLink || gLink.contains(e.target)) return;
+        map.setView([_info.lat, _info.lon], 17);
+        if (_info.marker) _info.marker.openPopup();
+      });
+      resultsDiv.appendChild(item);
+
+      resultData.push({ STT: stt, CellGốc: line, CellTraCứu: cellFull, NgàyGiờTraCứu: now, Mạng: r.tech.toUpperCase(), Lat: d.lat, Lon: d.lon, KhoảngCách: d.accuracy, ĐịaChỉ: d.address || '', GoogleMaps: gUrl, MCC_MNC_LAC_CID: cellFull });
+      allBounds.push([d.lat, d.lon]);
+      stt++;
+    } else {
+      var nf = document.createElement("div"); nf.className = "result-item";
+      nf.innerHTML = '<div class="result-text" style="color:#888">STT ' + stt + ' – Không tìm thấy: <b>' + line + '</b></div>';
+      resultsDiv.appendChild(nf);
+      stt++;
+    }
+  }
+
+  // Lưu lịch sử
+  if (resultData.length > 0) {
+    historyData.unshift({ time: new Date().toLocaleString(), cells: cellInputEl.value.trim(), results: resultData.length });
+    if (historyData.length > 50) historyData.pop();
+    localStorage.setItem("cellHistory", JSON.stringify(historyData));
+  }
+
+  if (allBounds.length === 1) map.setView(allBounds[0], 16);
+  else if (allBounds.length > 1) map.fitBounds(L.latLngBounds(allBounds), { padding: [60, 60], maxZoom: 16 });
+  linkMobiFoneResults();   // đường đứt nối BTS MobiFone gần nhất
+}
+
+// ============================================================
+//  OVERRIDE searchCells: tích hợp tra cell từ thông số + phân tích PCI/TA
+var _origSearchCells = searchCells;
+searchCells = async function() {
+  bulkRoutePoints = [];
+  var adv = getAdvParams();
+
+  // ── BƯỚC 1: Nếu có đủ MCC+MNC+TAC+eNB+CID → tự tính Cell ID và điền vào ô nhập ──
+  if(adv.canBuildCell) {
+    var lteCid   = calcLteCellId(adv.enb, adv.cid);
+    var cellStr  = adv.mcc + '.' + adv.mnc + '.' + adv.tac + '.' + lteCid;
+    var existing = cellInputEl.value.trim();
+    if(existing.indexOf(cellStr) === -1) {
+      cellInputEl.value = (existing ? existing + '\n' : '') + cellStr;
+    }
+    // Auto-detect nhà mạng từ MNC nếu đang để "auto"
+    var opEl = document.getElementById('advOperator');
+    if(opEl && opEl.value === 'auto') {
+      var det = detectOperatorByMnc(adv.mnc);
+      if(det !== 'auto') opEl.value = det;
+    }
+  }
+
+  // ── BƯỚC 2: Kiểm tra đầu vào ──
+  // Không có gì cả → báo lỗi
+  if(!adv.hasAny() && !cellInputEl.value.trim()) {
+    alert('Chưa nhập cell hoặc thông số nào!');
+    return;
+  }
+  // Không có thông số nâng cao → tra bình thường code cũ 100%
+  if(!adv.hasAny()) {
+    await _origSearchCells();
+    linkMobiFoneResults();   // vẽ đường đứt nối tới BTS MobiFone gần nhất
+    return;
+  }
+
+  // ── BƯỚC 3: Chạy tra cell bình thường (code cũ) – tìm BTS, vẽ quạt... ──
+  await _origSearchCells();
+  linkMobiFoneResults();
+
+  if(!resultData || resultData.length === 0) return;
+
+  // ── BƯỚC 4: Auto-detect nhà mạng từ kết quả tra về ──
+  var opKey = document.getElementById('advOperator').value || 'auto';
+  if(opKey === 'auto') {
+    var mnc1 = (resultData[0].MCC_MNC_LAC_CID||'').split('.')[1];
+    if(mnc1) {
+      var det2 = detectOperatorByMnc(mnc1);
+      if(det2 !== 'auto') { opKey = det2; document.getElementById('advOperator').value = det2; }
+    }
+  }
+
+  // ── BƯỚC 5: Lấy tọa độ BTS từ btsLayer (do code cũ analyzeBTS đã tính) ──
+  // Nếu không có BTS (tra đơn) → fallback dùng tọa độ cell gốc
+  var btsLat = null, btsLon = null;
+  btsLayer.eachLayer(function(layer){
+    if(btsLat !== null) return;
+    var ll = layer.getLatLng ? layer.getLatLng() : null;
+    if(ll){ btsLat = ll.lat; btsLon = ll.lng; }
+  });
+  if(btsLat === null) {
+    var orig = resultData.find(function(r){ return r.Lat && r.Lon; });
+    if(orig){ btsLat = orig.Lat; btsLon = orig.Lon; }
+  }
+  if(btsLat === null) return;
+
+  // ── BƯỚC 6: Vẽ lớp PCI/TA/UE lên đúng BTS đã tìm được ──
+  var ov = applyAdvancedOverlay(adv, btsLat, btsLon, opKey);
+
+  // ── BƯỚC 7: Hiển thị box phân tích nâng cao lên đầu kết quả ──
+  var advBox = createAdvResultBox(adv, btsLat, btsLon, ov.sector, ov.distM, ov.uePt);
+  if(resultsDiv.firstChild) resultsDiv.insertBefore(advBox, resultsDiv.firstChild);
+  else resultsDiv.appendChild(advBox);
+
+  // ── BƯỚC 8: Zoom bản đồ bao gồm BTS + UE + cell gốc ──
+  if(ov.uePt) {
+    var pts = [[btsLat, btsLon], ov.uePt];
+    resultData.forEach(function(r){ if(r.Lat && r.Lon) pts.push([r.Lat, r.Lon]); });
+    map.fitBounds(L.latLngBounds(pts), {padding:[60,60], maxZoom:16});
+  }
+};
+// ============================================================
+//  END THÔNG SỐ NÂNG CAO
+// ============================================================
+// ============================================================
+//  TRA NHIỀU CELL TỪ FILE (Excel/Word) – GHIM TRÊN BẢN ĐỒ
+//  Nhận diện nhà mạng theo tiêu đề cột:
+//   • Mobifone : cột "Thời gian" (dd/mm/yyyy hh:mm:ss) + "Mã địa danh"
+//                (452-01-63002-123456 → bỏ 452 + bỏ gạch → 01.63002.123456)
+//                + "Tên địa danh" (địa chỉ trong file)
+//   • Vinaphone: cột "Date" (yymmdd) + "Time" (hmmss) + "Lac" + "Cellid"
+//                (Lac 20271, Cellid 21832 → thêm 02 → 02.20271.21832)
+//                + "cell_name" (địa chỉ trong file)
+//   • Viettel  : cột "Thời gian" (d/mm/yyyy hh:mm:ss) + "Lac" + "Số cell"
+//                (Lac 26046, Số cell 153945609 → thêm 04 → 04.26046.153945609)
+//                + "Địa chỉ trạm BTS"
+//  Quy tắc: tra từng dòng theo ngày giờ tăng dần; cell trùng chỉ tra 1 lần,
+//  ghim hiển thị tất cả ngày/giờ trùng; cell không tra được sẽ liệt kê.
+// ============================================================
+var fileInputBulk = document.getElementById('fileInputBulk');
+
+var OP_META = {
+  mobifone: { name:'Mobifone',  color:'#1565c0', addrLabel:'Tên địa danh' },
+  vinaphone:{ name:'Vinaphone', color:'#2e7d32', addrLabel:'Cell name' },
+  viettel:  { name:'Viettel',   color:'#c62828', addrLabel:'Địa chỉ trạm BTS' },
+  unknown:  { name:'Không rõ',  color:'#7b1fa2', addrLabel:'Địa chỉ (file)' }
+};
+
+function valStr(v){ return v==null ? '' : String(v).trim(); }
+function pad2(n){ n=String(n); return n.length<2 ? ('0'+n) : n; }
+
+// Chuẩn hoá tên cột: bỏ dấu, thường hoá, gộp khoảng trắng
+function normHeader(h){
+  return valStr(h).toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/đ/g,'d')
+    .replace(/\s+/g,' ').trim();
+}
+
+// Lấy giá trị theo tiêu đề cột.
+// Khớp theo độ chính xác giảm dần để tránh lấy nhầm cột khi bảng có nhiều cột:
+//   1) Tên cột TRÙNG KHỚP HOÀN TOÀN với từ khoá   (chính xác nhất)
+//   2) Tên cột BẮT ĐẦU bằng từ khoá
+//   3) Tên cột CHỨA từ khoá
+// subs[0] là từ khoá ưu tiên cao nhất.
+function field(o, subs){
+  // 1) khớp tuyệt đối tên cột
+  for(var si=0; si<subs.length; si++){
+    for(var key in o){ if(key===subs[si]) return o[key]; }
+  }
+  // 2) tên cột bắt đầu bằng từ khoá
+  for(var si2=0; si2<subs.length; si2++){
+    for(var key2 in o){ if(key2.indexOf(subs[si2])===0) return o[key2]; }
+  }
+  // 3) tên cột chứa từ khoá
+  for(var si3=0; si3<subs.length; si3++){
+    for(var key3 in o){ if(key3.indexOf(subs[si3])!==-1) return o[key3]; }
+  }
+  return undefined;
+}
+
+// Nhận diện nhà mạng theo tiêu đề cột
+function detectOperator(headers){
+  var has=function(sub){ return headers.some(function(h){ return h.indexOf(sub)!==-1; }); };
+  if(has('ma dia danh')) return 'mobifone';
+  if(has('so cell')||has('so_cell')||has('socell')) return 'viettel';
+  if(has('cellid')&&has('lac')) return 'vinaphone';
+  if(has('date')&&has('time')&&has('lac')) return 'vinaphone';
+  return 'unknown';
+}
+
+// dd/mm/yyyy hh:mm:ss  (cho Mobifone & Viettel)
+function parseDMY(str){
+  var s=valStr(str); if(!s) return null;
+  var m=s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(?:[ T]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+  if(!m) return null;
+  var dd=+m[1], mm=+m[2], yy=+m[3]; if(yy<100) yy+=2000;
+  var hh=m[4]!=null?+m[4]:0, mi=m[5]!=null?+m[5]:0, ss=m[6]!=null?+m[6]:0;
+  return { sort: Date.UTC(yy,mm-1,dd,hh,mi,ss),
+           text: pad2(dd)+'/'+pad2(mm)+'/'+yy+(m[4]!=null?(' '+pad2(hh)+':'+pad2(mi)+':'+pad2(ss)):'') };
+}
+
+// date=yymmdd  time=hmmss  (cho Vinaphone)
+function parseVinaDT(dateStr, timeStr){
+  var d=valStr(dateStr).replace(/\D/g,'');
+  var t=valStr(timeStr).replace(/\D/g,'');
+  if(d.length<6) return null;
+  d=d.slice(-6);
+  var yy=+d.substring(0,2), mm=+d.substring(2,4), dd=+d.substring(4,6);
+  var year=yy + (yy<70?2000:1900);
+  t = t.length ? ('000000'+t).slice(-6) : '000000';
+  var hh=+t.substring(0,2), mi=+t.substring(2,4), ss=+t.substring(4,6);
+  return { sort: Date.UTC(year,mm-1,dd,hh,mi,ss),
+           text: pad2(dd)+'/'+pad2(mm)+'/'+year+' '+pad2(hh)+':'+pad2(mi)+':'+pad2(ss) };
+}
+
+// Mobifone: 452-01-63002-123456 → 01.63002.123456
+function mobifoneCell(code){
+  var s=valStr(code); if(!s) return null;
+  var parts=s.split(/[-_.\s]+/).filter(Boolean);
+  if(parts.length && parts[0]==='452') parts.shift();
+  if(parts.length>=3) return parts[0]+'.'+parts[1]+'.'+parts[2];
+  return null;
+}
+
+// Ghép prefix mạng + lac + cid → "02.lac.cid" / "04.lac.cid"
+function dotCell(prefix, lac, cid){
+  var l=valStr(lac).replace(/\D/g,'');
+  var c=valStr(cid).replace(/\D/g,'');
+  if(!l||!c) return null;
+  return prefix+'.'+l+'.'+c;
+}
+
+// Trường hợp file không rõ nhà mạng: dò cell + ngày giờ trong các cột
+function genericRow(o){
+  var cellStr=null, dt=null, fileAddr='';
+  for(var k in o){
+    var v=valStr(o[k]); if(!v) continue;
+    if(!dt){ var dd=parseDMY(v); if(dd) dt=dd; }
+    if(!cellStr){ var pr=parseCell(v); if(pr.success) cellStr=v; }
+    if(!fileAddr && /(dia chi|address|ten|name|tram)/.test(k)) fileAddr=v;
+  }
+  return { cellStr:cellStr, dt:dt, fileAddr:fileAddr };
+}
+
+// Từ 1 dòng → {cellStr, op, dtSort, dtText, fileAddr}
+// Mỗi nhà mạng dùng đúng tiêu đề cột riêng để lấy dữ liệu chính xác.
+function buildFromRow(o, op){
+  var dt=null, fileAddr='', cellStr=null;
+  if(op==='mobifone'){
+    // Cột "Mã địa danh" để tra cell, "Thời gian" (dd/mm/yyyy hh:mm:ss), "Tên địa danh" = địa chỉ
+    cellStr=mobifoneCell(field(o,['ma dia danh','ma_dia_danh','madiadanh']));
+    dt=parseDMY(field(o,['thoi gian','thoigian','time']));
+    fileAddr=valStr(field(o,['ten dia danh','ten_dia_danh','tendiadanh']));
+  } else if(op==='vinaphone'){
+    // Cột "Lac" + "Cellid" thêm 02; "Date" (yymmdd) + "Time" (hmmss); "cell_name" = địa chỉ
+    cellStr=dotCell('02', field(o,['lac']), field(o,['cellid','cell id','cell_id']));
+    dt=parseVinaDT(field(o,['date','ngay']), field(o,['time','gio']));
+    fileAddr=valStr(field(o,['cell_name','cell name','cellname']));
+  } else if(op==='viettel'){
+    // Cột "Lac" + "Số cell" thêm 04; "Thời gian" (d/mm/yyyy hh:mm:ss); "Địa chỉ trạm BTS"
+    cellStr=dotCell('04', field(o,['lac']), field(o,['so cell','so_cell','socell','so cel']));
+    dt=parseDMY(field(o,['thoi gian','thoigian','time']));
+    fileAddr=valStr(field(o,['dia chi tram bts','dia chi tram','dia chi','diachi','tram bts','ten tram','vi tri tram','tram','bts']));
+  } else {
+    var g=genericRow(o); cellStr=g.cellStr; dt=g.dt; fileAddr=g.fileAddr;
+  }
+  if(!cellStr) return null;
+  return { cellStr:cellStr, op:op, dtSort: dt?dt.sort:0, dtText: dt?dt.text:'', fileAddr:fileAddr };
+}
+
+// AOA → danh sách object {tên_cột_chuẩn_hoá: giá_trị}, tự tìm dòng tiêu đề
+function rowsToObjects(aoa){
+  var keywords=['thoi gian','ma dia danh','ten dia danh','date','time','lac','cellid','so cell','socell','cell_name','cell name','dia chi','bts'];
+  var bestIdx=-1, bestScore=0;
+  for(var i=0;i<Math.min(aoa.length,20);i++){
+    var row=aoa[i]||[], score=0;
+    row.forEach(function(c){ var n=normHeader(c); keywords.forEach(function(k){ if(n&&n.indexOf(k)!==-1) score++; }); });
+    if(score>bestScore){ bestScore=score; bestIdx=i; }
+  }
+  if(bestIdx===-1) bestIdx=0;
+  var headers=(aoa[bestIdx]||[]).map(function(c){ return normHeader(c); });
+  var objs=[];
+  for(var r=bestIdx+1;r<aoa.length;r++){
+    var row=aoa[r]||[];
+    if(!row.some(function(c){ return valStr(c)!==''; })) continue;
+    var o={};
+    headers.forEach(function(h,ci){ if(h) o[h]=row[ci]; });
+    objs.push(o);
+  }
+  return { headers:headers.filter(Boolean), rows:objs };
+}
+
+async function readRowsFromFile(file){
+  var fn=file.name.toLowerCase();
+  if(fn.endsWith('.docx')||fn.endsWith('.doc')) return readWordRows(file);
+  return readExcelRows(file);
+}
+
+function readExcelRows(file){
+  return new Promise(function(res,rej){
+    var r=new FileReader();
+    r.onload=function(e){
+      try{
+        var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        var allRows=[], headers=[];
+        wb.SheetNames.forEach(function(sn){
+          var aoa=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:false,defval:''});
+          var ro=rowsToObjects(aoa);
+          if(ro.rows.length){ allRows=allRows.concat(ro.rows); if(!headers.length) headers=ro.headers; else headers=headers.concat(ro.headers); }
+        });
+        res({ headers:headers, rows:allRows });
+      }catch(err){ rej(new Error('Excel: '+err.message)); }
+    };
+    r.onerror=function(){ rej(new Error('Đọc file lỗi')); };
+    r.readAsArrayBuffer(file);
+  });
+}
+
+function readWordRows(file){
+  return new Promise(function(res,rej){
+    var r=new FileReader();
+    r.onload=function(e){
+      mammoth.convertToHtml({arrayBuffer:e.target.result}).then(function(result){
+        var div=document.createElement('div'); div.innerHTML=result.value;
+        var aoa=[];
+        div.querySelectorAll('table').forEach(function(tb){
+          tb.querySelectorAll('tr').forEach(function(tr){
+            var row=[]; tr.querySelectorAll('th,td').forEach(function(td){ row.push(td.textContent.trim()); });
+            if(row.length) aoa.push(row);
+          });
+        });
+        res(rowsToObjects(aoa));
+      }).catch(function(err){ rej(new Error('Word: '+err.message)); });
+    };
+    r.onerror=function(){ rej(new Error('Đọc Word lỗi')); };
+    r.readAsArrayBuffer(file);
+  });
+}
+
+function importBulkFile(){ fileInputBulk.click(); }
+
+fileInputBulk.addEventListener('change', async function(e){
+  var files=e.target.files; if(!files.length) return;
+  showImportStatus('Đang đọc file...', false);
+  var blocks=[];
+  for(var i=0;i<files.length;i++){
+    try{
+      var parsed=await readRowsFromFile(files[i]);
+      blocks.push({ op: detectOperator(parsed.headers), rows: parsed.rows });
+    }catch(err){ showImportStatus('Lỗi: '+err.message, true); fileInputBulk.value=''; return; }
+  }
+  fileInputBulk.value='';
+  await runBulkLookup(blocks);
+});
+
+// Tạo ghim + mục kết quả cho 1 cell đã tra được
+function addBulkPin(orderNo, g, cellFull, d, tech){
+  var meta=OP_META[g.op]||OP_META.unknown;
+  var gUrl='https://www.google.com/maps?q='+d.lat+','+d.lon;
+
+  // Marker số thứ tự
+  var marker=L.marker([d.lat,d.lon],{
+    icon:L.divIcon({ className:'',
+      html:'<div style="background:'+meta.color+';color:#fff;width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.45);border:2px solid #fff"><span style="transform:rotate(45deg);font-size:12px;font-weight:bold">'+orderNo+'</span></div>',
+      iconAnchor:[15,30] }),
+    zIndexOffset:1000
+  }).addTo(markersLayer);
+  marker.bindPopup(buildBulkPopup(orderNo,g,cellFull,d,tech),{maxWidth:300});
+  L.circle([d.lat,d.lon],{radius:d.accuracy||250,color:meta.color,fillOpacity:0.08,weight:1.5}).addTo(markersLayer);
+
+  // Mục kết quả trong panel
+  var item=document.createElement('div');
+  item.className='result-item';
+  item.style.cssText='border-left:4px solid '+meta.color;
+  var firstDt=g.occ.length?(g.occ[0].dtText||'-'):'-';
+  var lines=[
+    '#'+orderNo+' • '+meta.name+(g.occ.length>1?(' (trùng '+g.occ.length+' lần)'):''),
+    'Cell: '+cellFull,
+    'Ngày giờ: '+firstDt+(g.occ.length>1?' …':''),
+    'Địa chỉ KQ: '+(d.address||'-'),
+    'Vĩ/Kinh: '+d.lat.toFixed(6)+', '+d.lon.toFixed(6),
+    'Mạng: '+tech.toUpperCase()+' | KC: '+(d.accuracy||'-')+' m'
+  ];
+  var textDiv=document.createElement('div');
+  textDiv.className='result-text';
+  textDiv.innerHTML='<b>'+lines[0]+'</b>\n'+lines.slice(1).join('\n');
+  var actDiv=document.createElement('div');
+  actDiv.className='result-actions';
+  var gLink=document.createElement('a');
+  gLink.className='g-button'; gLink.target='_blank'; gLink.href=gUrl; gLink.innerHTML='G';
+  actDiv.appendChild(gLink);
+  item.appendChild(textDiv); item.appendChild(actDiv);
+  item.addEventListener('click', function(ev){
+    if(ev.target===gLink||gLink.contains(ev.target)) return;
+    map.setView([d.lat,d.lon],17); marker.openPopup();
+  });
+  resultsDiv.appendChild(item);
+  return marker;
+}
+
+function buildBulkPopup(orderNo, g, cellFull, d, tech){
+  var meta=OP_META[g.op]||OP_META.unknown;
+  var gUrl='https://www.google.com/maps?q='+d.lat+','+d.lon;
+  var times=g.occ.map(function(oc){
+    var fa=oc.fileAddr?(' – '+oc.fileAddr):'';
+    return '• '+(oc.dtText||'(không có thời gian)')+fa;
+  }).join('<br>');
+  var addrs=Array.from(new Set(g.occ.map(function(oc){ return valStr(oc.fileAddr); }).filter(Boolean)));
+  var html='<div class="cell-popup">';
+  html+='<div class="popup-title" style="color:'+meta.color+'">📍 #'+orderNo+' '+meta.name+'</div>';
+  html+='<b>Cell:</b> '+cellFull+'<br>';
+  html+='<b>Số lần xuất hiện:</b> '+g.occ.length+'<br>';
+  html+='<div class="popup-sub"><div class="popup-sub-title">🕓 Ngày giờ tra cell:</div>'+times+'</div>';
+  html+='<div style="margin-top:6px"><b>📌 Địa chỉ kết quả tra:</b><br>'+(d.address||'-')+'</div>';
+  if(addrs.length) html+='<div style="margin-top:4px"><b>🏠 '+meta.addrLabel+':</b><br>'+addrs.join('<br>')+'</div>';
+  html+='<div style="margin-top:6px"><b>Mạng:</b> '+tech.toUpperCase()+' &nbsp;|&nbsp; <b>KC:</b> '+(d.accuracy||'-')+' m</div>';
+  html+='<div style="margin-top:5px"><a href="'+gUrl+'" target="_blank" style="font-weight:bold">📍 Vĩ độ: '+d.lat.toFixed(6)+', Kinh độ: '+d.lon.toFixed(6)+' 🗺️</a></div>';
+  html+='</div>';
+  return html;
+}
+
+// ── Vẽ lộ trình nối các điểm ghim theo thứ tự trên bản đồ local ──
+function drawLocalRoute(points){
+  if(!points || points.length < 2) return;
+  var latlngs = points.map(function(p){ return [p.lat, p.lon]; });
+  // Đường nối lộ trình (nét đứt, nằm dưới các ghim)
+  L.polyline(latlngs, { color:'#ff6f00', weight:3.5, opacity:0.85, dashArray:'9,6', lineJoin:'round' }).addTo(markersLayer);
+  // Mũi tên chỉ hướng di chuyển ở giữa mỗi đoạn
+  for(var i=0; i<points.length-1; i++){
+    var a=points[i], b=points[i+1];
+    var midLat=(a.lat+b.lat)/2, midLng=(a.lon+b.lon)/2;
+    var ang=Math.atan2(b.lon-a.lon, b.lat-a.lat)*180/Math.PI;
+    L.marker([midLat,midLng], {
+      icon:L.divIcon({ className:'',
+        html:'<div style="color:#ff6f00;font-size:18px;font-weight:bold;transform:rotate('+ang+'deg);text-shadow:0 0 3px #fff,0 0 3px #fff">➤</div>',
+        iconAnchor:[9,9] }),
+      interactive:false
+    }).addTo(markersLayer);
+  }
+}
+
+// ── Mở toàn bộ điểm ghim theo thứ tự lên Google Maps (chỉ đường 1→2→3...) ──
+function openRouteGoogleMaps(){
+  var pts = bulkRoutePoints;
+  if(!pts || !pts.length){ alert('Chưa có điểm ghim nào. Hãy "Tra File → Ghim bản đồ" trước.'); return; }
+  if(pts.length === 1){
+    window.open('https://www.google.com/maps?q='+pts[0].lat+','+pts[0].lon, '_blank');
+    return;
+  }
+  var MAX = 10; // Google Maps nối tối đa ~10 điểm mỗi lộ trình
+  if(pts.length <= MAX){
+    var url = 'https://www.google.com/maps/dir/' + pts.map(function(p){ return p.lat+','+p.lon; }).join('/');
+    window.open(url, '_blank');
+    return;
+  }
+  // Nhiều hơn 10 điểm → chia thành nhiều đoạn lộ trình nối tiếp (điểm cuối đoạn này = điểm đầu đoạn sau)
+  var segments = [];
+  for(var i=0; i<pts.length-1; i += (MAX-1)){
+    var chunk = pts.slice(i, i+MAX);
+    if(chunk.length >= 2) segments.push(chunk);
+  }
+  if(!confirm('Có '+pts.length+' điểm. Google Maps chỉ nối được ~'+MAX+' điểm mỗi lộ trình.\nSẽ mở '+segments.length+' tab lộ trình nối tiếp nhau (1→2→3...). Tiếp tục?')) return;
+  segments.forEach(function(seg){
+    var url = 'https://www.google.com/maps/dir/' + seg.map(function(p){ return p.lat+','+p.lon; }).join('/');
+    window.open(url, '_blank');
+  });
+}
+
+async function runBulkLookup(blocks){
+  resultsDiv.innerHTML=''; resultData=[]; bulkRoutePoints=[];
+  markersLayer.clearLayers(); btsLayer.clearLayers();
+
+  var techs=[];
+  if(document.getElementById('auto').checked) techs=['umts','lte','nbiot','nr'];
+  else ['umts','lte','nbiot','nr'].forEach(function(t){ if(document.getElementById(t).checked) techs.push(t); });
+  if(!techs.length) techs=['umts','lte','nbiot','nr'];
+
+  // Gom nhóm theo cell (trùng → tra 1 lần, gộp ngày giờ)
+  var groups={}, totalRows=0, skipped=0, opsSeen={};
+  blocks.forEach(function(blk){
+    blk.rows.forEach(function(o){
+      totalRows++;
+      var built=buildFromRow(o, blk.op);
+      if(!built||!built.cellStr){ skipped++; return; }
+      opsSeen[built.op]=true;
+      if(!groups[built.cellStr]) groups[built.cellStr]={ cellStr:built.cellStr, op:built.op, occ:[] };
+      groups[built.cellStr].occ.push({ dtSort:built.dtSort, dtText:built.dtText, fileAddr:built.fileAddr });
+    });
+  });
+
+  var keys=Object.keys(groups);
+  if(!keys.length){ showImportStatus('Không tìm thấy cell hợp lệ trong file. Kiểm tra tiêu đề cột.', true); return; }
+
+  // Sắp xếp ngày giờ trong từng nhóm + sắp các nhóm theo thời điểm sớm nhất (tăng dần)
+  keys.forEach(function(k){
+    groups[k].occ.sort(function(a,b){ return (a.dtSort||0)-(b.dtSort||0); });
+    groups[k].earliest = groups[k].occ.length ? (groups[k].occ[0].dtSort||0) : 0;
+  });
+  keys.sort(function(a,b){ return (groups[a].earliest||0)-(groups[b].earliest||0); });
+
+  var opNames=Object.keys(opsSeen).map(function(o){ return (OP_META[o]||OP_META.unknown).name; }).join(', ');
+  var head=document.createElement('div');
+  head.className='group-title';
+  head.textContent='📊 Tra '+keys.length+' cell ('+totalRows+' dòng, mạng: '+opNames+') – sắp xếp theo ngày giờ tăng dần';
+  resultsDiv.appendChild(head);
+
+  showImportStatus('Đang tra '+keys.length+' cell...', false);
+
+  var bounds=[], okCount=0, failList=[], orderNo=1;
+  for(var ki=0; ki<keys.length; ki++){
+    var g=groups[keys[ki]];
+    var parsed=parseCell(g.cellStr);
+    if(!parsed.success){ failList.push(g.cellStr+' (không nhận dạng)'); continue; }
+    var p=parsed.parsed;
+    var cellFull=p.mcc+'.'+p.mnc+'.'+p.lac+'.'+p.cellid;
+    var r=await lookupCell(p.mnc, p.lac, p.cellid, p.mcc, techs);
+    if(r.success){
+      var d=r.data;
+      addBulkPin(orderNo, g, cellFull, d, r.tech);
+      bounds.push([d.lat,d.lon]);
+      bulkRoutePoints.push({ order:orderNo, lat:d.lat, lon:d.lon, label:cellFull });
+      var gUrl='https://www.google.com/maps?q='+d.lat+','+d.lon;
+      g.occ.forEach(function(oc){
+        resultData.push({ STT:resultData.length+1, CellGốc:g.cellStr, CellTraCứu:cellFull,
+          NgàyGiờTraCứu:oc.dtText||'', Mạng:r.tech.toUpperCase(), Lat:d.lat, Lon:d.lon,
+          KhoảngCách:d.accuracy, ĐịaChỉ:d.address||'', MCC_MNC_LAC_CID:cellFull, GoogleMaps:gUrl });
+      });
+      okCount++; orderNo++;
+    } else {
+      failList.push(cellFull);
+    }
+  }
+
+  // Liệt kê cell không tra được
+  if(failList.length){
+    var fb=document.createElement('div');
+    fb.style.cssText='margin-top:10px;padding:8px 10px;border-radius:8px;background:#ffebee;border:1px solid #f44336;color:#c62828;font-size:12px;line-height:1.6';
+    fb.innerHTML='<b>❌ '+failList.length+' cell không tra được:</b><br>'+failList.map(function(x){ return '• '+x; }).join('<br>');
+    resultsDiv.appendChild(fb);
+  }
+
+  // Vẽ lộ trình nối các điểm theo thứ tự trên bản đồ local
+  drawLocalRoute(bulkRoutePoints);
+  if(bulkRoutePoints.length >= 2){
+    var rb=document.createElement('div');
+    rb.style.cssText='margin-top:8px;padding:8px 10px;border-radius:8px;background:#fff3e0;border:1px solid #ff9800;color:#e65100;font-size:12px;line-height:1.5;cursor:pointer';
+    rb.innerHTML='🗺️ <b>Đã nối '+bulkRoutePoints.length+' điểm theo thứ tự 1→'+bulkRoutePoints.length+' trên bản đồ.</b><br>👉 Nhấn vào đây (hoặc nút "Lộ trình Google Maps") để mở chỉ đường trên Google Maps.';
+    rb.onclick=openRouteGoogleMaps;
+    resultsDiv.appendChild(rb);
+  }
+
+  showImportStatus('Xong: '+okCount+' cell ghim trên bản đồ'+(failList.length?(', '+failList.length+' không tra được'):''), failList.length>0, failList.length>0);
+
+  if(bounds.length===1) map.setView(bounds[0],15);
+  else if(bounds.length>1) map.fitBounds(L.latLngBounds(bounds),{padding:[50,50],maxZoom:16});
+
+  if(resultData.length){
+    historyData.unshift({ time:new Date().toLocaleString(), data:JSON.parse(JSON.stringify(resultData)) });
+    if(historyData.length>20) historyData=historyData.slice(0,20);
+    localStorage.setItem('cellHistory', JSON.stringify(historyData));
+  }
+}
+
+function showImportStatus(msg,isErr,isWarn) {
+  importStatus.textContent=msg;
+  importStatus.className=isErr?'import-status error':(isWarn?'import-status warning':'import-status success');
+  importStatus.style.display='block';
+  setTimeout(function(){importStatus.style.display='none';},(isErr||isWarn)?10000:5000);
+}
+
+// ============================================================
+//  LỚP BTS BẢN ĐỒ (MobiFone cố định hướng + import KML/KMZ)
+//  Tối ưu: site dạng canvas luôn hiện; sector chỉ vẽ trong khung
+//  nhìn khi zoom đủ lớn → 14k sector không làm chậm máy.
+// ============================================================
+var BTSOverlay = (function(){
+  var rdr, siteLayer, sectorLayer, nearestLayer, datasets=[], activeFilter=null, hullCache=null;
+  var STORE_KEY='btsLayersV1';
+  var SECTOR_ZOOM=14, SECTOR_R=200, SECTOR_HPBW=65, SECTOR_FB=25;
+  var showSites=true, showSectors=true, sectorShape='pattern';
+  // HPBW + bán kính riêng theo công nghệ (5G thu gọn hơn)
+  var TECH_PAT={'2G':{hpbw:65,r:260},'3G':{hpbw:65,r:240},'4G':{hpbw:65,r:220},'5G':{hpbw:40,r:150},'':{hpbw:65,r:200}};
+  function classTech(v){var s=(''+v).toUpperCase();if(/5G|NR/.test(s))return '5G';if(/4G|LTE/.test(s))return '4G';if(/3G|UMTS|WCDMA/.test(s))return '3G';if(/2G|GSM/.test(s))return '2G';return '';}
+  function siteTech(s){ if(s.__tech!==undefined)return s.__tech; var all=''; if(s.d){for(var k in s.d)all+=' '+s.d[k];} s.__tech=classTech(all); return s.__tech; }
+  var TECH_COLOR={'2G':'#9c27b0','3G':'#fb8c00','4G':'#e53935','5G':'#00bcd4','':'#1565c0'};
+  var OP_NAME={1:'MobiFone',2:'VinaPhone',4:'Viettel',5:'Vietnamobile',0:'Khác'};
+  var OP_COLOR={1:'#2e7d32',2:'#8e24aa',4:'#1565c0',5:'#d81b60',0:'#f9a825'}; // Mobi lá, Vina tím, Viettel dương, VNM hồng, Khác vàng
+  var OP_FILE={1:'mobifone',2:'vinaphone',4:'viettel',5:'vietnamobile',0:'khac'};
+
+  function toRad(d){return d*Math.PI/180;}
+  function dest(la,lo,br,dist){ var R=6371000,d=dist/R,t=toRad(br),f1=toRad(la),l1=toRad(lo);
+    var f2=Math.asin(Math.sin(f1)*Math.cos(d)+Math.cos(f1)*Math.sin(d)*Math.cos(t));
+    var l2=l1+Math.atan2(Math.sin(t)*Math.sin(d)*Math.cos(f1),Math.cos(d)-Math.sin(f1)*Math.sin(f2));
+    return [f2*180/Math.PI,((l2*180/Math.PI+540)%360)-180];}
+  function hav(a1,o1,a2,o2){ var R=6371000,da=toRad(a2-a1),dlo=toRad(o2-o1);
+    var x=Math.sin(da/2)*Math.sin(da/2)+Math.cos(toRad(a1))*Math.cos(toRad(a2))*Math.sin(dlo/2)*Math.sin(dlo/2);
+    return 2*R*Math.asin(Math.min(1,Math.sqrt(x)));}
+  function norm(s){ return (s==null?'':s.toString()).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').trim(); }
+
+  function status(msg){ var el=document.getElementById('btsStatus'); if(el) el.innerHTML=msg; }
+  function visible(ds){ return !activeFilter || activeFilter.indexOf(ds.mnc)>=0; }
+
+  var initialized=false;
+  // Nạp các lớp nhúng .js (file *_bts.js cùng thư mục) — gọi được nhiều lần,
+  // dù file tải xong trước hay sau khi bản đồ sẵn sàng.
+  function siteKey(b){ return (b.n||'')+'|'+(b.la!=null?(+b.la).toFixed(5):'')+'|'+(b.lo!=null?(+b.lo).toFixed(5):''); }
+  function makeSeen(bts){ var s={}; (bts||[]).forEach(function(b){ s[siteKey(b)]=1; }); return s; }
+  function bundledDS(mnc){ for(var i=0;i<datasets.length;i++) if(datasets[i].mnc===mnc && datasets[i].bundled) return datasets[i]; return null; }
+  // Gộp danh sách BTS vào lớp nhà mạng (mnc). Các tỉnh khác nhau cùng nhà mạng → dồn 1 lớp, tự loại trùng.
+  function mergeBundled(mnc, bts){
+    var ds=bundledDS(mnc);
+    if(!ds){ ds={name:(OP_NAME[mnc]||'Khác'), rawName:(OP_NAME[mnc]||'Khác'), mnc:mnc,
+                 color:(OP_COLOR[mnc]!=null?OP_COLOR[mnc]:OP_COLOR[0]), bts:[], bundled:true, fixed:false, __seen:{}};
+             datasets.push(ds); }
+    if(!ds.__seen) ds.__seen=makeSeen(ds.bts);
+    (bts||[]).forEach(function(b){ var k=siteKey(b); if(ds.__seen[k]) return; ds.__seen[k]=1; ds.bts.push(b); });
+    ds.__grid=null; ds.__hull=null;
+    return ds;
+  }
+  function reload(){
+    if(!initialized) return;
+    var ex=window.EXTRA_BTS_DATASETS||[], added=0;
+    ex.forEach(function(d){
+      if(d.__added) return; d.__added=true;
+      mergeBundled(d.mnc, d.bts||[]); added++;
+    });
+    if(added){ renderSites(); renderViewport(); updateStatus(); hullCache=null; }
+  }
+
+  function init(){
+    if(typeof map==='undefined'||!map){ setTimeout(init,200); return; }
+    rdr=L.canvas({padding:0.5});
+    siteLayer=L.layerGroup().addTo(map);
+    sectorLayer=L.layerGroup().addTo(map);
+    nearestLayer=L.layerGroup().addTo(map);
+    if(window.MOBIFONE_BTS&&window.MOBIFONE_BTS.length)
+      datasets.push({name:'MobiFone',rawName:'MobiFone',color:OP_COLOR[1],bts:window.MOBIFONE_BTS.slice(),fixed:true,bundled:true,mnc:1,__seen:makeSeen(window.MOBIFONE_BTS)});
+    initialized=true;
+    reload();   // nạp các file *_bts.js đã tải xong tới thời điểm này
+    // Lớp đã lưu trong trình duyệt thiết bị này (bỏ qua nếu đã có lớp nhúng .js trùng)
+    try{
+      JSON.parse(localStorage.getItem(STORE_KEY)||'[]').forEach(function(d){
+        pushDataset(d.name||(OP_NAME[d.mnc]||'BTS'), d.mnc, d.bts||[], {});
+      });
+    }catch(e){}
+    map.on('moveend zoomend',renderViewport);
+    loadSavedJs();   // khôi phục file .js đã thêm lần trước (mở lại vẫn còn)
+    renderSites(); renderViewport(); updateStatus();
+    addMapControl();
+  }
+  // Nút điều khiển sector ngay trên bản đồ chính (tiện cho di động)
+  function addMapControl(){
+    if(!L.control) return;
+    var ctl=L.control({position:'topright'});
+    ctl.onAdd=function(){
+      var d=L.DomUtil.create('div','leaflet-bar');
+      d.style.cssText='background:#fff;padding:6px 8px;font:12px/1.45 sans-serif;color:#222;box-shadow:0 1px 4px rgba(0,0,0,.3);max-width:180px';
+      d.innerHTML=
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'+
+          '<span style="font-weight:600">📡 Sector</span>'+
+          '<button id="mapGear" title="Cài đặt" style="border:1px solid #ccc;border-radius:5px;background:#f4f4f4;cursor:pointer;padding:0 6px">⚙</button>'+
+        '</div>'+
+        '<label style="display:block;margin-top:3px"><input type="checkbox" id="mapShowSec" checked> Hiện (zoom≥14)</label>'+
+        '<label style="display:block;margin-top:2px">Kiểu: <select id="mapShape" style="font-size:12px"><option value="pattern">Búp sóng</option><option value="wedge">Quạt</option></select></label>'+
+        '<div id="mapAdv" style="display:none;border-top:1px solid #e2e2e2;margin-top:5px;padding-top:5px">'+
+          '<div style="font-weight:600;margin-bottom:2px">Nhà mạng</div>'+
+          '<div id="mapOps" style="display:flex;flex-wrap:wrap;gap:3px"></div>'+
+          '<div style="font-weight:600;margin:6px 0 2px">Chỉnh búp sóng</div>'+
+          '<label>Công nghệ: <select id="mapTech" style="font-size:12px"><option>2G</option><option>3G</option><option selected>4G</option><option>5G</option></select></label>'+
+          '<label style="display:block;margin-top:3px">HPBW: <b id="hpbwVal"></b>°<input type="range" id="hpbwSld" min="10" max="120" step="1" style="width:100%"></label>'+
+          '<label style="display:block">Bán kính: <b id="radVal"></b> m<input type="range" id="radSld" min="50" max="600" step="10" style="width:100%"></label>'+
+        '</div>';
+      L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d);
+      return d;
+    };
+    ctl.addTo(map);
+    setTimeout(function(){
+      var sec=document.getElementById('mapShowSec'), sh=document.getElementById('mapShape');
+      if(sec)sec.onchange=function(){ BTSOverlay.setShowSectors(sec.checked); };
+      if(sh)sh.onchange=function(){ BTSOverlay.setSectorShape(sh.value); };
+      var gear=document.getElementById('mapGear'), adv=document.getElementById('mapAdv');
+      if(gear)gear.onclick=function(){ adv.style.display=(adv.style.display==='none')?'block':'none'; };
+      // nút chọn nhanh nhà mạng → đồng bộ với ô "Bản đồ nhà mạng"
+      var ops=[['all','Tất cả'],['1','Mobi'],['2','Vina'],['4','Viettel'],['5','VNM']];
+      var wrap=document.getElementById('mapOps');
+      ops.forEach(function(o){var b=document.createElement('button');b.textContent=o[1];
+        b.style.cssText='border:1px solid #ccc;border-radius:5px;background:#f4f4f4;cursor:pointer;padding:2px 6px;font-size:11px';
+        b.onclick=function(){var sel=document.getElementById('mapOperatorSel');if(sel){sel.value=o[0];if(typeof applyMapOperator==='function')applyMapOperator();}};
+        wrap.appendChild(b);});
+      // thanh trượt HPBW / bán kính theo công nghệ
+      var techSel=document.getElementById('mapTech'),hs=document.getElementById('hpbwSld'),rs=document.getElementById('radSld'),hv=document.getElementById('hpbwVal'),rv=document.getElementById('radVal');
+      function loadTech(){var p=BTSOverlay.getTechPat(techSel.value);hs.value=p.hpbw;rs.value=p.r;hv.textContent=p.hpbw;rv.textContent=p.r;}
+      if(techSel){techSel.onchange=loadTech;
+        hs.oninput=function(){hv.textContent=hs.value;BTSOverlay.setTechPat(techSel.value,'hpbw',+hs.value);};
+        rs.oninput=function(){rv.textContent=rs.value;BTSOverlay.setTechPat(techSel.value,'r',+rs.value);};
+        loadTech();}
+    },0);
+  }
+  function updateStatus(){
+    if(!datasets.length){ status('(chưa có dữ liệu BTS)'); return; }
+    status(datasets.map(function(d){ return '<b style="color:'+d.color+'">'+d.name+'</b>: '+d.bts.length+(visible(d)?'':' (ẩn)'); }).join(' • '));
+  }
+
+  function renderSites(){
+    siteLayer.clearLayers(); if(!showSites) return;
+    datasets.forEach(function(ds){ if(!visible(ds)) return; ds.bts.forEach(function(b){
+      L.circleMarker([b.la,b.lo],{renderer:rdr,radius:3,color:ds.color,weight:1,fillColor:ds.color,fillOpacity:0.85})
+       .bindPopup(sitePopup(b,ds)).addTo(siteLayer);
+    });});
+  }
+  function renderViewport(){
+    sectorLayer.clearLayers();
+    if(!showSectors||map.getZoom()<SECTOR_ZOOM) return;
+    var bb=map.getBounds().pad(0.25);
+    datasets.forEach(function(ds){ if(!visible(ds)) return; ds.bts.forEach(function(s){
+      if(bb.contains([s.la,s.lo])) drawSiteSectors(s,ds,sectorLayer);
+    });});
+  }
+  // Búp sóng theo mẫu bức xạ anten 3GPP: A(θ)=-min(12·(θ/HPBW)², Am) dB; bán kính = R·10^(A/20)
+  function patternPts(la,lo,az,hpbw,R,Am){
+    var pts=[]; hpbw=hpbw||65; Am=Am||25;
+    for(var a=0;a<=360;a+=8){
+      var th=Math.abs(((a-az+540)%360)-180);
+      var att=Math.min(12*(th/hpbw)*(th/hpbw),Am);
+      pts.push(dest(la,lo,a,R*Math.pow(10,-att/20)));
+    }
+    return pts;
+  }
+  function wedgePts(la,lo,az,bw,R){var pts=[[la,lo]];for(var i=0;i<=12;i++)pts.push(dest(la,lo,az-bw/2+bw*i/12,R));pts.push([la,lo]);return pts;}
+  function drawSiteSectors(s,ds,layer){
+    var secs=(s.s&&s.s.length)?s.s:[{a:0},{a:120},{a:240}]; // không có hướng → pattern chuẩn 0/120/240
+    var stech=siteTech(s);
+    secs.forEach(function(sec){
+      var tech=classTech(sec.y)||stech||'';
+      var pat=TECH_PAT[tech]||TECH_PAT[''];
+      var col=TECH_COLOR[tech]||ds.color;
+      var pts=(sectorShape==='wedge')?wedgePts(s.la,s.lo,sec.a,pat.hpbw,pat.r)
+                                     :patternPts(s.la,s.lo,sec.a,pat.hpbw,pat.r,SECTOR_FB);
+      L.polygon(pts,{renderer:rdr,color:col,weight:0.8,fillColor:col,fillOpacity:0.22})
+       .bindTooltip((s.n||'')+' • '+(tech||'?')+' '+sec.a+'° ('+pat.hpbw+'°)',{sticky:true}).addTo(layer);
+    });
+  }
+  function sitePopup(b,ds){
+    var head='<div class="bts-popup"><div class="bts-title">📡 '+(b.n||'BTS')+' · '+ds.name+'</div>';
+    var skip=function(k){ var s=(''+k).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').trim();
+      return s==='loai cot'||s==='ma tram'||s==='ma nha tram'||s==='ma nha tram'; };
+    var info='';
+    if(b.d){ // hiện các cột của file (trừ Loại cột, Mã trạm)
+      info='<table border="1" cellpadding="3" style="border-collapse:collapse;margin:4px 0;font-size:12px">';
+      for(var k in b.d){ if(b.d[k]==null||b.d[k]==='') continue; if(skip(k)) continue;
+        info+='<tr><td style="color:#666;white-space:nowrap"><b>'+k+'</b></td><td>'+b.d[k]+'</td></tr>'; }
+      info+='</table>';
+    } else {
+      info='<b>Lat:</b> '+b.la+'<br><b>Lon:</b> '+b.lo+'<br>';
+      var rows=(b.s||[]).map(function(x){return '<tr><td>'+(x.y||'')+'</td><td>'+x.a+'°</td></tr>';}).join('');
+      info+=(rows?'<table border="1" cellpadding="2" style="border-collapse:collapse;margin-top:4px"><tr><th>Tech</th><th>Hướng</th></tr>'+rows+'</table>'
+                 :'<i>(không có hướng — vẽ chuẩn 0/120/240)</i>');
+    }
+    return head+info+'<div style="margin-top:4px"><b>Lat:</b> '+b.la+' · <b>Lon:</b> '+b.lo+
+      '<br><a href="https://www.google.com/maps?q='+b.la+','+b.lo+'" target="_blank">🗺️ Google Maps</a></div></div>';
+  }
+
+  // Nearest BTS theo nhà mạng (mnc). Nếu mnc=null thì xét mọi lớp.
+  function nearestForOp(la,lo,mnc){
+    var best=null,bd=1e15;
+    datasets.forEach(function(ds){ if(mnc!=null && ds.mnc!==mnc) return;
+      ds.bts.forEach(function(b){ var d=hav(la,lo,b.la,b.lo); if(d<bd){bd=d;best={b:b,ds:ds};} }); });
+    return best?{bts:best.b,ds:best.ds,dist:bd}:null;
+  }
+  function linkNearest(la,lo,mnc){
+    var r=nearestForOp(la,lo,mnc); if(!r) return null;
+    L.polyline([[la,lo],[r.bts.la,r.bts.lo]],{color:'#7b1fa2',weight:2.2,dashArray:'8 7'})
+     .bindTooltip('→ '+(r.bts.n||'BTS')+' ('+r.ds.name+'): '+Math.round(r.dist)+' m',{permanent:true,direction:'center',className:'bts-dist'})
+     .addTo(nearestLayer);
+    drawSiteSectors(r.bts,r.ds,nearestLayer);
+    L.circleMarker([r.bts.la,r.bts.lo],{radius:6,color:'#7b1fa2',weight:2,fillColor:r.ds.color,fillOpacity:0.9})
+     .bindPopup(sitePopup(r.bts,{name:r.ds.name+' (gần nhất)'})).addTo(nearestLayer);
+    return r;
+  }
+  function clearNearest(){ if(nearestLayer) nearestLayer.clearLayers(); }
+
+  /* ---- Ranh giới vùng phủ: "dấu chân" lưới ~2,4km bám đúng phân bố trạm thật.
+         Không phình lồi như convex hull → không trùm sang tỉnh kế (vd Lâm Đồng).
+         Tự tổng quát cho mọi tỉnh thêm sau; mỗi dataset có lưới riêng. ---- */
+  function datasetGrid(ds){
+    if(ds.__grid) return ds.__grid;
+    var CELL=0.022, set={};   // ~2,4km; cộng 8 ô lân cận → với tới ~3,6km
+    ds.bts.forEach(function(b){ set[Math.round(b.lo/CELL)+':'+Math.round(b.la/CELL)]=1; });
+    ds.__grid={cell:CELL,set:set};
+    return ds.__grid;
+  }
+  // Có trạm nhà mạng gần (~3,6km) theo dấu chân lưới hay không
+  function inGrid(la,lo,mnc){
+    for(var i=0;i<datasets.length;i++){ var ds=datasets[i]; if(ds.mnc!==mnc) continue;
+      var g=datasetGrid(ds), gx=Math.round(lo/g.cell), gy=Math.round(la/g.cell);
+      for(var dx=-1;dx<=1;dx++) for(var dy=-1;dy<=1;dy++) if(g.set[(gx+dx)+':'+(gy+dy)]) return true;
+    }
+    return false;
+  }
+  function pipRings(lon,lat,rings){
+    var inside=false;
+    for(var k=0;k<rings.length;k++){ var poly=rings[k], c=false;
+      for(var i=0,j=poly.length-1;i<poly.length;j=i++){
+        var xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1];
+        if(((yi>lat)!=(yj>lat)) && (lon < (xj-xi)*(lat-yi)/(yj-yi)+xi)) c=!c;
+      }
+      if(c) inside=!inside;
+    }
+    return inside;
+  }
+  function nearBound(lon,lat,b,pad){ return lon>=b[0]-pad&&lon<=b[2]+pad&&lat>=b[1]-pad&&lat<=b[3]+pad; }
+  // Trong địa phận tỉnh có dữ liệu nhà mạng:
+  //  - Vùng đã nhúng ranh giới hành chính (Đồng Nai + Bình Phước): bắt buộc nằm TRONG ranh giới.
+  //  - Tỉnh khác add sau (chưa có ranh giới): theo dấu chân trạm.
+  function inArea(la,lo,mnc){
+    if(!inGrid(la,lo,mnc)) return false;           // không có trạm nhà mạng gần → không nối
+    var PB=window.PROVINCE_BOUNDS, insideAny=false, nearAny=false;
+    if(PB){
+      for(var key in PB){ var b=PB[key];
+        if(pipRings(lo,la,b.rings)){ insideAny=true; break; }
+        if(nearBound(lo,la,b.bbox,0.12)) nearAny=true;
+      }
+      if(insideAny) return true;     // trong ranh giới tỉnh đã nhúng → nối
+      if(nearAny) return false;      // sát tỉnh đó nhưng ngoài ranh giới (HCMC/Bình Dương/BRVT/Lâm Đồng…) → không nối
+    }
+    return true;                     // tỉnh khác (xa vùng đã nhúng) → theo dấu chân trạm
+  }
+  function hasOperator(mnc){ return datasets.some(function(d){return d.mnc===mnc;}); }
+  function setFilter(arr){ activeFilter=(arr&&arr.length)?arr.slice():null; renderSites(); renderViewport(); updateStatus(); }
+  function clearFilter(){ activeFilter=null; renderSites(); renderViewport(); updateStatus(); }
+
+  /* ---------- Parse KML ---------- */
+  function parseKml(text){
+    var doc=new DOMParser().parseFromString(text,'text/xml');
+    var pms=doc.getElementsByTagName('Placemark'), bts=[];
+    for(var i=0;i<pms.length;i++){ var pm=pms[i];
+      var pt=pm.getElementsByTagName('Point')[0]; if(!pt) continue;
+      var co=pt.getElementsByTagName('coordinates')[0]; if(!co) continue;
+      var p=co.textContent.trim().split(/[\s,]+/), lo=parseFloat(p[0]), la=parseFloat(p[1]);
+      if(!isFinite(la)||!isFinite(lo)) continue;
+      var nm=(pm.getElementsByTagName('name')[0]||{}).textContent||'';
+      var desc=(pm.getElementsByTagName('description')[0]||{}).textContent||'';
+      var azs=[],m,re=/(\d{1,3}(?:\.\d+)?)\s*°/g;
+      while((m=re.exec(desc))){ var v=Math.round(parseFloat(m[1])); if(v>=0&&v<=360) azs.push({a:v%360}); }
+      bts.push({n:(nm||'').trim(),la:la,lo:lo,s:azs});
+    }
+    return bts;
+  }
+
+  /* ---------- Parse bảng (Excel/CSV) ---------- */
+  function findCol(hdr,keys){ for(var i=0;i<hdr.length;i++){ var h=norm(hdr[i]); for(var k=0;k<keys.length;k++){ if(h.indexOf(keys[k])>=0) return i; } } return -1; }
+  function rowsToBts(aoa){
+    if(!aoa||aoa.length<2) return [];
+    var hdr=aoa[0];
+    var iLa=findCol(hdr,['latitude','lat','vido','vi do','vĩ']);
+    var iLo=findCol(hdr,['longitude','long','lng','lon','kinhdo','kinh do','kinh']);
+    var iNm=findCol(hdr,['name','ten','site','tram','cellid','cell','id','code']);
+    var iAz=findCol(hdr,['azimuth','azim','huong','goc','az']);
+    var rows=aoa.slice(1), bts=[];
+    // fallback: không có header lat/lon → tự dò 2 cột số theo phạm vi VN
+    if(iLa<0||iLo<0){
+      var r0=aoa[1]||[];
+      for(var c=0;c<r0.length;c++){ var v=parseFloat(r0[c]); if(!isFinite(v)) continue;
+        if(v>=8&&v<=24&&iLa<0) iLa=c; else if(v>=100&&v<=116&&iLo<0) iLo=c; }
+      rows=aoa.slice( /[a-zA-Z]/.test((aoa[0]||[]).join('')) ?1:0 );
+    }
+    if(iLa<0||iLo<0) return [];
+    rows.forEach(function(row){
+      var la=parseFloat(row[iLa]), lo=parseFloat(row[iLo]);
+      if(!isFinite(la)||!isFinite(lo)||Math.abs(la)>90||Math.abs(lo)>180) return;
+      if(la>90){ var t=la; la=lo; lo=t; } // phòng đảo cột
+      var s=[];
+      if(iAz>=0 && row[iAz]!=null && row[iAz]!==''){
+        (''+row[iAz]).split(/[\/,;|\s]+/).forEach(function(a){ var v=Math.round(parseFloat(a)); if(isFinite(v)&&v>=0&&v<=360) s.push({a:v%360}); });
+      }
+      var d={}; // giữ đầy đủ mọi cột để hiện trong popup
+      for(var c=0;c<hdr.length;c++){ var key=(hdr[c]==null||hdr[c]==='')?('Cột '+(c+1)):(''+hdr[c]); if(row[c]!=null&&row[c]!=='') d[key]=''+row[c]; }
+      bts.push({ n:(iNm>=0?(''+row[iNm]).trim():''), la:la, lo:lo, s:s, d:Object.keys(d).length?d:null });
+    });
+    return bts;
+  }
+  function parseCsv(text){
+    var sep = (text.indexOf(';')>=0 && text.indexOf(',')<0) ? ';' : ',';
+    return text.split(/\r?\n/).filter(function(l){return l.trim();}).map(function(l){ return l.split(sep).map(function(c){return c.trim().replace(/^"|"$/g,'');}); });
+  }
+  function parseExcel(file,cb){
+    var r=new FileReader();
+    r.onload=function(e){ try{
+        var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'}); var all=[];
+        wb.SheetNames.forEach(function(sn){ all=all.concat(rowsToBts(XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:false,defval:''}))); });
+        cb(all);
+      }catch(err){ alert('Lỗi đọc Excel: '+err.message); } };
+    r.readAsArrayBuffer(file);
+  }
+
+  function pushDataset(rawName,mnc,bts,flags){
+    flags=flags||{};
+    var col=OP_COLOR[mnc]!=null?OP_COLOR[mnc]:OP_COLOR[0];
+    datasets.push({name:(OP_NAME[mnc]||'Khác'), rawName:rawName, color:col,
+                   bts:bts, fixed:!!flags.fixed, bundled:!!flags.bundled, mnc:mnc});
+    return datasets[datasets.length-1];
+  }
+  // Lưu các lớp import (không gồm MobiFone gốc & lớp nhúng .js) vào trình duyệt
+  function persist(){
+    try{
+      var imp=datasets.filter(function(d){return !d.fixed&&!d.bundled;})
+                      .map(function(d){return {name:d.rawName,mnc:d.mnc,bts:d.bts};});
+      localStorage.setItem(STORE_KEY, JSON.stringify(imp)); return true;
+    }catch(e){ return false; }
+  }
+  function addDataset(rawName,mnc,bts){
+    pushDataset(rawName,mnc,bts,{}); hullCache=null;
+    renderSites(); renderViewport(); updateStatus();
+    if(!persist()) alert('⚠️ Lớp đã hiển thị nhưng KHÔNG lưu được vào bộ nhớ trình duyệt (dữ liệu quá lớn ~>5MB).\nDùng nút "💾 Xuất .js nhúng" để lưu vĩnh viễn theo phần mềm.');
+    return bts.length;
+  }
+  function clearSaved(){
+    try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+    try{ localStorage.removeItem(ADDED_JS_KEY); }catch(e){}
+    datasets=datasets.filter(function(d){return d.fixed||d.bundled;});
+    activeFilter=null; hullCache=null; renderSites(); renderViewport(); updateStatus();
+    alert('🗑️ Đã xoá lớp import và danh sách file .js đã thêm.\n(Phiên này vẫn hiện; lần mở sau sẽ không tự nạp lại các file .js đã thêm.)');
+  }
+  // Xuất lớp import thành file .js đặt tên theo nhà mạng (vinaphone_bts.js…)
+  function dl(fn,txt,mime){
+    mime=mime||'text/javascript';
+    if(window.AndroidSave&&AndroidSave.saveFile){ try{ AndroidSave.saveFile(fn,mime,btoa(unescape(encodeURIComponent(txt)))); return; }catch(e){} }
+    var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:mime})); a.download=fn; a.click();
+  }
+  function exportBundleJs(){
+    var imp=datasets.filter(function(d){return !d.fixed && !d.bundled;});
+    if(!imp.length){ alert('Chưa có lớp import mới nào để xuất.\n(Lớp đã nhúng .js từ trước không xuất lại.)'); return; }
+    var byOp={}; imp.forEach(function(d){ (byOp[d.mnc]=byOp[d.mnc]||[]).push({name:d.rawName,mnc:d.mnc,bts:d.bts}); });
+    var files=[];
+    Object.keys(byOp).forEach(function(op){
+      var arr=byOp[op], fn=(OP_FILE[op]||('op'+op))+'_bts.js';
+      var js='/* Lớp BTS '+(OP_NAME[op]||op)+' - nhúng cố định, tự nạp khi đặt cùng thư mục */\n'+
+             'window.EXTRA_BTS_DATASETS=(window.EXTRA_BTS_DATASETS||[]);\n'+
+             arr.map(function(d){return 'window.EXTRA_BTS_DATASETS.push('+JSON.stringify(d)+');';}).join('\n')+
+             '\nif(window.BTSOverlay&&window.BTSOverlay.reload)window.BTSOverlay.reload();';
+      dl(fn,js); files.push(fn);
+    });
+    alert('✅ Đã xuất '+files.length+' file: '+files.join(', ')+
+          '\n\nCHỈ CẦN copy các file này vào cùng thư mục phần mềm (cạnh mobifone_bts.js) rồi tải lại trang — KHÔNG cần sửa HTML, tool tự nạp.'+
+          '\nDeploy lên Netlify: upload cả thư mục là xong.'+
+          '\n\nSau khi copy file, nên bấm "🗑️ Xoá lớp đã lưu" để tránh trùng.');
+  }
+  function importFromFile(file){
+    var mnc=parseInt((document.getElementById('btsImportOperator')||{}).value||'0'); if(isNaN(mnc)) mnc=0;
+    var nm=file.name.replace(/\.(kml|kmz|xlsx|xls|csv)$/i,'');
+    var finish=function(bts,kind){
+      if(!bts||!bts.length){ alert('Không tìm thấy điểm BTS trong file '+file.name+'.\n(Excel cần có cột vĩ độ & kinh độ.)'); return; }
+      var withAz=bts.filter(function(b){return b.s&&b.s.length;}).length;
+      addDataset(nm,mnc,bts);
+      alert('✅ Nạp '+bts.length+' BTS ['+kind+'] gán nhà mạng '+(OP_NAME[mnc]||'Khác')+'.\n'+
+            withAz+' có hướng thật → vẽ búp sóng pattern theo hướng; '+(bts.length-withAz)+' không hướng → pattern chuẩn 0/120/240 khi zoom ≥ '+SECTOR_ZOOM+'.');
+    };
+    if(/\.kmz$/i.test(file.name)){
+      if(!window.JSZip){ alert('Thiếu JSZip (cần mạng lần đầu).'); return; }
+      file.arrayBuffer().then(function(b){return JSZip.loadAsync(b);}).then(function(zip){
+        var k=Object.keys(zip.files).find(function(f){return /\.kml$/i.test(f);}); if(!k) throw new Error('KMZ không có .kml'); return zip.files[k].async('string');
+      }).then(function(t){ finish(parseKml(t),'KMZ'); }).catch(function(e){ alert('Lỗi KMZ: '+e.message); });
+    } else if(/\.kml$/i.test(file.name)){
+      file.text().then(function(t){ finish(parseKml(t),'KML'); });
+    } else if(/\.csv$/i.test(file.name)){
+      file.text().then(function(t){ finish(rowsToBts(parseCsv(t)),'CSV'); });
+    } else { parseExcel(file,function(b){ finish(b,'Excel'); }); }
+  }
+
+  function exportKml(){
+    var s='<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>BTS_export</name>';
+    datasets.forEach(function(ds){ s+='<Folder><name>'+ds.name+'</name>';
+      ds.bts.forEach(function(b){ var azt=(b.s||[]).map(function(x){return (x.y||'')+' '+x.a+'°';}).join(', ');
+        s+='<Placemark><name>'+(b.n||'')+'</name><description><![CDATA['+azt+']]></description><Point><coordinates>'+b.lo+','+b.la+',0</coordinates></Point></Placemark>'; });
+      s+='</Folder>'; });
+    s+='</Document></kml>';
+    dl('BTS_export.kml', s, 'application/vnd.google-earth.kml+xml');
+  }
+
+  function totalBts(){ var n=0; datasets.forEach(function(d){n+=d.bts.length;}); return n; }
+  var ADDED_JS_KEY='addedJsFilesV1';
+  function getSavedJs(){ try{ return JSON.parse(localStorage.getItem(ADDED_JS_KEY)||'[]'); }catch(e){ return []; } }
+  function saveAddedJs(name,text){
+    var list=getSavedJs();
+    // thay nếu trùng tên (tránh phình to khi add lại cùng file)
+    list=list.filter(function(x){return x.name!==name;});
+    list.push({name:name,text:text});
+    try{ localStorage.setItem(ADDED_JS_KEY, JSON.stringify(list)); return true; }
+    catch(e){ alert('⚠️ Bộ nhớ trình duyệt đã đầy — file vẫn hiện lần này nhưng có thể không lưu được để lần sau. Nên đặt file .js trực tiếp trong thư mục web/app.'); return false; }
+  }
+  // Khôi phục các file .js đã thêm trước đó (gọi khi khởi động)
+  function loadSavedJs(){
+    getSavedJs().forEach(function(it){
+      try{ var s=document.createElement('script'); s.text=it.text; document.body.appendChild(s); }catch(e){}
+    });
+    reload();
+  }
+  // Thêm file .js (bản đồ tỉnh mới) lúc đang chạy: tự gộp theo nhà mạng + lưu để mở lại vẫn còn
+  function addJsFiles(files){
+    if(!files||!files.length) return;
+    var arr=Array.prototype.slice.call(files), i=0, before=totalBts(), savedN=0;
+    (function next(){
+      if(i>=arr.length){
+        renderSites(); renderViewport(); updateStatus(); hullCache=null;
+        alert('✅ Đã thêm '+arr.length+' file .js (đã lưu '+savedN+' file vào máy để mở lại vẫn còn).\nTổng BTS tăng '+(totalBts()-before)+', gộp theo nhà mạng.');
+        return;
+      }
+      var f=arr[i++], r=new FileReader();
+      r.onload=function(){
+        try{ var s=document.createElement('script'); s.text=r.result; document.body.appendChild(s); if(saveAddedJs(f.name, r.result)) savedN++; }
+        catch(e){ alert('Lỗi nạp '+f.name+': '+e.message); }
+        reload(); next();
+      };
+      r.onerror=function(){ alert('Không đọc được '+f.name); next(); };
+      r.readAsText(f);
+    })();
+  }
+
+  return { init:init, reload:reload, linkNearest:linkNearest, clearNearest:clearNearest, importFromFile:importFromFile, inArea:inArea,
+           exportKml:exportKml, exportBundleJs:exportBundleJs, clearSaved:clearSaved,
+           hasOperator:hasOperator, setFilter:setFilter, clearFilter:clearFilter,
+           count:function(){return datasets.reduce(function(a,d){return a+d.bts.length;},0);},
+           setShowSites:function(v){showSites=v;renderSites();},
+           setShowSectors:function(v){showSectors=v;var a=document.getElementById('btsShowSectors'),b=document.getElementById('mapShowSec');if(a)a.checked=v;if(b)b.checked=v;renderViewport();},
+           setSectorShape:function(v){sectorShape=v;var a=document.getElementById('btsSectorShape'),b=document.getElementById('mapShape');if(a)a.value=v;if(b)b.value=v;renderViewport();},
+           getTechPat:function(t){return TECH_PAT[t]||TECH_PAT['']; },
+           setTechPat:function(t,key,val){ if(TECH_PAT[t]){ TECH_PAT[t][key]=val; renderViewport(); } },
+           addJsFiles:addJsFiles };
+})();
+
+function importBTSFile(){ document.getElementById('btsFileInput').click(); }
+document.getElementById('btsFileInput').addEventListener('change',function(e){
+  if(e.target.files[0]) BTSOverlay.importFromFile(e.target.files[0]);
+  e.target.value='';
+});
+function exportBtsKml(){ if(BTSOverlay.count()) BTSOverlay.exportKml(); else alert('Chưa có BTS nào để xuất.'); }
+
+// Khi tra cell: hiện bản đồ nhà mạng theo nút chọn (hoặc tự động theo cell) + nối BTS gần nhất
+function linkMobiFoneResults(){
+  if(!window.BTSOverlay) return;
+  BTSOverlay.clearNearest();
+  var rows=(typeof resultData!=='undefined'?resultData:[]);
+  var sel=(document.getElementById('mapOperatorSel')||{}).value||'auto';
+
+  if(sel!=='auto' && sel!=='all'){           // ép 1 nhà mạng do người dùng chọn
+    var m=parseInt(sel);
+    BTSOverlay.setFilter([m]);
+    rows.forEach(function(r){ if(r.Lat!=null && BTSOverlay.inArea(r.Lat,r.Lon,m)) BTSOverlay.linkNearest(r.Lat, r.Lon, m); });
+    return;
+  }
+  // tự động theo MNC của cell, hoặc tất cả
+  var ops={};
+  rows.forEach(function(r){ var mnc=parseInt((r.MCC_MNC_LAC_CID||'').split('.')[1]); if(!isNaN(mnc)) ops[mnc]=1; });
+  var opList=Object.keys(ops).map(Number).filter(function(x){ return BTSOverlay.hasOperator(x); });
+  if(sel==='all') BTSOverlay.clearFilter();
+  else if(opList.length) BTSOverlay.setFilter(opList);
+  rows.forEach(function(r){ var mnc=parseInt((r.MCC_MNC_LAC_CID||'').split('.')[1]);
+    if(!isNaN(mnc) && BTSOverlay.hasOperator(mnc) && r.Lat!=null && BTSOverlay.inArea(r.Lat,r.Lon,mnc))
+      BTSOverlay.linkNearest(r.Lat, r.Lon, mnc);
+  });
+}
+
+// Đổi nút chọn bản đồ nhà mạng → áp dụng lọc ngay
+function applyMapOperator(){
+  if(!window.BTSOverlay) return;
+  var sel=(document.getElementById('mapOperatorSel')||{}).value||'auto';
+  if(sel==='all'||sel==='auto') BTSOverlay.clearFilter();
+  else BTSOverlay.setFilter([parseInt(sel)]);
+}
+</script>
+
+<!-- ===== LUOI AN TOAN (them moi - khong doi chuc nang) ===== -->
+<script>
+(function(){
+  function banner(msg){
+    if(document.getElementById('tcErrBar')) return;
+    var d=document.createElement('div');
+    d.id='tcErrBar';
+    d.style.cssText='position:fixed;left:0;right:0;top:0;z-index:99999;background:#b71c1c;color:#fff;'+
+      'font:12px/1.5 Arial,sans-serif;padding:8px 10px;box-shadow:0 2px 8px rgba(0,0,0,.4)';
+    d.innerHTML='<b>Loi khoi tao:</b> '+msg+
+      ' <button id="tcFix" style="margin-left:8px;background:#fff;color:#b71c1c;border:none;'+
+      'border-radius:6px;padding:4px 9px;font-weight:bold;box-shadow:none">Xoa cache &amp; tai lai</button>'+
+      ' <button id="tcHide" style="margin-left:4px;background:transparent;color:#fff;border:1px solid #fff;'+
+      'border-radius:6px;padding:4px 9px;box-shadow:none">Dong</button>';
+    document.body.appendChild(d);
+    document.getElementById('tcHide').onclick=function(){d.remove();};
+    document.getElementById('tcFix').onclick=function(){
+      var jobs=[];
+      if(window.caches&&caches.keys) jobs.push(caches.keys().then(function(ks){
+        return Promise.all(ks.map(function(k){return caches.delete(k);}));}));
+      if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)
+        jobs.push(navigator.serviceWorker.getRegistrations().then(function(rs){
+          return Promise.all(rs.map(function(r){return r.unregister();}));}));
+      Promise.all(jobs).catch(function(){}).then(function(){location.reload(true);});
+    };
+  }
+  window.__tcBanner = banner;
+  window.addEventListener('error', function(e){
+    var m = (e && e.message) ? e.message : 'khong xac dinh';
+    if(e && e.target && e.target.tagName === 'SCRIPT'){
+      m = 'khong tai duoc ' + (e.target.src || 'script');
+    }
+    banner(m);
+  }, true);
+  window.addEventListener('load', function(){
+    if(!window.L){
+      banner('thu vien ban do (Leaflet) chua tai duoc.');
+      return;
+    }
+    if(!window.map){
+      banner('ban do chua khoi tao xong.');
+    }
+    // Du co su co o doan sau, nut TRA CELL van mo duoc bang dieu khien
+    var b=document.getElementById('togglePanel');
+    var p=document.getElementById('controlPanel');
+    if(b&&p&&!b.onclick){ b.onclick=function(){ p.classList.add('open'); }; }
+  });
+})();
+</script>
+</body>
+</html>
