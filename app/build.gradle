@@ -3,7 +3,6 @@ plugins {
 }
 
 android {
-    // namespace chi dung cho lop R/BuildConfig; applicationId moi la ten goi that
     namespace 'io.github.minhcell.tracell'
     compileSdk 34
 
@@ -11,9 +10,8 @@ android {
         applicationId "io.github.minhcell.TRACELLMOI"
         minSdk 23
         targetSdk 34
-        // Moi lan build tren GitHub versionCode tu tang (run_number + 100)
-        versionCode ((System.getenv("VERSION_CODE") ?: "1").toInteger() + 100)
-        versionName System.getenv("VERSION_NAME") ?: "1.0.1"
+        versionCode ((System.getenv("VERSION_CODE") ?: "1").toInteger() + 200)
+        versionName System.getenv("VERSION_NAME") ?: "2.0.0"
     }
 
     signingConfigs {
@@ -37,6 +35,11 @@ android {
         }
     }
 
+    // File .js du lieu BTS rat lon, khong nen nen lai lan nua
+    androidResources {
+        noCompress 'js'
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -45,5 +48,5 @@ android {
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+    implementation 'androidx.webkit:webkit:1.8.0'
 }
