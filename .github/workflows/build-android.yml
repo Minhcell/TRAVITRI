@@ -1,15 +1,18 @@
 name: Build APK TRA CELL
 
 on:
-  workflow_dispatch:          # bấm nút Run workflow để build
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths:
-      - 'android/**'
+      - '**/settings.gradle'
+      - '**/build.gradle'
+      - '**/AndroidManifest.xml'
+      - '**/res/**'
       - '.github/workflows/build-android.yml'
 
 permissions:
-  contents: write             # cần để tạo Release chứa file APK
+  contents: write
 
 jobs:
   build:
@@ -18,6 +21,28 @@ jobs:
     steps:
       - name: Lấy mã nguồn
         uses: actions/checkout@v4
+
+      - name: Tìm thư mục dự án Android
+        id: find
+        run: |
+          echo "--- Cây thư mục repo (2 cấp) ---"
+          find . -path ./.git -prune -o -maxdepth 2 -print | sort
+          echo "--------------------------------"
+          SG=$(find . -path ./.git -prune -o -name settings.gradle -print 2>/dev/null | head -1)
+          if [ -z "$SG" ]; then
+            SG=$(find . -path ./.git -prune -o -name settings.gradle.kts -print 2>/dev/null | head -1)
+          fi
+          if [ -z "$SG" ]; then
+            echo "::error::Khong tim thay settings.gradle trong repo."
+            echo "::error::Nghia la thu muc android/ chua duoc upload len GitHub."
+            echo "::error::Kiem tra trang chinh cua repo phai thay thu muc 'android'."
+            exit 1
+          fi
+          DIR=$(dirname "$SG")
+          echo "Tim thay du an Android tai: $DIR"
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+          echo "--- Noi dung ---"
+          find "$DIR" -type f | sort
 
       - name: Cài JDK 17
         uses: actions/setup-java@v4
@@ -37,11 +62,15 @@ jobs:
 
       - name: Khôi phục keystore ký app
         run: |
+          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "::error::Thieu secret KEYSTORE_BASE64. Vao Settings > Secrets and variables > Actions de them."
+            exit 1
+          fi
           echo "${{ secrets.KEYSTORE_BASE64 }}" | tr -d '\n' | base64 -d > "$RUNNER_TEMP/signing.keystore"
           ls -l "$RUNNER_TEMP/signing.keystore"
 
       - name: Build APK + AAB
-        working-directory: android
+        working-directory: ${{ steps.find.outputs.dir }}
         env:
           KEYSTORE_PATH: ${{ runner.temp }}/signing.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -54,8 +83,8 @@ jobs:
       - name: Gom file kết quả
         run: |
           mkdir -p dist
-          cp android/app/build/outputs/apk/release/app-release.apk    dist/TRA_CELL.apk
-          cp android/app/build/outputs/bundle/release/app-release.aab dist/TRA_CELL.aab
+          find "${{ steps.find.outputs.dir }}" -name '*.apk' -path '*release*' -exec cp {} dist/TRA_CELL.apk \;
+          find "${{ steps.find.outputs.dir }}" -name '*.aab' -path '*release*' -exec cp {} dist/TRA_CELL.aab \;
           ls -lh dist
 
       - name: Tải lên artifact
