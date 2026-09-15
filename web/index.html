@@ -3070,12 +3070,19 @@ function applyMapOperator(){
     };
   }
   window.__tcBanner = banner;
+  // Cac file .js phu (co thi nap, khong co thi thoi) - khong phai loi
+  var TUY_CHON = /(khac_bts|khac|bts_layers|[a-z0-9_]+_bts)\.js(\?|$)/i;
   window.addEventListener('error', function(e){
-    var m = (e && e.message) ? e.message : 'khong xac dinh';
     if(e && e.target && e.target.tagName === 'SCRIPT'){
-      m = 'khong tai duoc ' + (e.target.src || 'script');
+      var src = e.target.src || '';
+      // trang da tu xu ly bang onerror rieng -> bo qua
+      if(e.target.onerror) return;
+      // file du lieu nha mang dat them, khong bat buoc -> bo qua
+      if(TUY_CHON.test(src)) return;
+      banner('khong tai duoc ' + (src || 'script'));
+      return;
     }
-    banner(m);
+    banner((e && e.message) ? e.message : 'khong xac dinh');
   }, true);
   window.addEventListener('load', function(){
     if(!window.L){
