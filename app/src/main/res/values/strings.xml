@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appName">TRA CELL</string>
+    <string name="launcherName">CELL MOI</string>
+    <string name="hostName">minhcell.github.io</string>
+    <string name="launchUrl">https://minhcell.github.io/tracellmoi/</string>
+    <string name="webManifestUrl">https://minhcell.github.io/tracellmoi/manifest.json</string>
+    <string name="orientation">portrait</string>
+    <string name="fallbackType">customtabs</string>
+    <string name="assetStatements">
+        [{
+          \"relation\": [\"delegate_permission/common.handle_all_urls\"],
+          \"target\": {
+            \"namespace\": \"web\",
+            \"site\": \"https://minhcell.github.io\"
+          }
+        }]
+    </string>
+</resources>
