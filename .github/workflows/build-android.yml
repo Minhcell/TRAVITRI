@@ -19,13 +19,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Lấy mã nguồn
+      - name: Lay ma nguon
         uses: actions/checkout@v4
 
-      - name: Tìm thư mục dự án Android
+      - name: Tim thu muc du an Android
         id: find
         run: |
-          echo "--- Cây thư mục repo (2 cấp) ---"
+          echo "--- Cay thu muc repo (2 cap) ---"
           find . -path ./.git -prune -o -maxdepth 2 -print | sort
           echo "--------------------------------"
           SG=$(find . -path ./.git -prune -o -name settings.gradle -print 2>/dev/null | head -1)
@@ -34,36 +34,153 @@ jobs:
           fi
           if [ -z "$SG" ]; then
             echo "::error::Khong tim thay settings.gradle trong repo."
-            echo "::error::Nghia la thu muc android/ chua duoc upload len GitHub."
-            echo "::error::Kiem tra trang chinh cua repo phai thay thu muc 'android'."
+            echo "::error::Nghia la cac file gradle chua duoc upload len GitHub."
             exit 1
           fi
           DIR=$(dirname "$SG")
           echo "Tim thay du an Android tai: $DIR"
           echo "dir=$DIR" >> "$GITHUB_OUTPUT"
-          echo "--- Noi dung ---"
-          find "$DIR" -type f | sort
 
-      - name: Cài JDK 17
+      - name: Tao lai icon va splash (khong dung file PNG trong repo)
+        run: |
+          RES="${{ steps.find.outputs.dir }}/app/src/main/res"
+          mkdir -p "$RES"
+          cat > /tmp/icon.b64 <<'ICON_EOF'
+          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
+          AAAAAElFTkSuQmCC
+          ICON_EOF
+          base64 -d /tmp/icon.b64 > /tmp/icon-512.png
+          ls -l /tmp/icon-512.png
+          python3 -m pip install --quiet --upgrade pillow \
+            || python3 -m pip install --quiet --break-system-packages --upgrade pillow \
+            || true
+          python3 - "$RES" <<'PY_EOF'
+          import sys, os
+          from PIL import Image
+          res = sys.argv[1]
+          src = Image.open('/tmp/icon-512.png').convert('RGBA')
+          for name, size in [('mdpi',48),('hdpi',72),('xhdpi',96),('xxhdpi',144),('xxxhdpi',192)]:
+              d = os.path.join(res, 'mipmap-' + name)
+              os.makedirs(d, exist_ok=True)
+              src.resize((size,size), Image.LANCZOS).save(os.path.join(d,'ic_launcher.png'))
+          d = os.path.join(res, 'drawable')
+          os.makedirs(d, exist_ok=True)
+          src.resize((384,384), Image.LANCZOS).save(os.path.join(d,'splash.png'))
+          print('Da tao xong icon va splash')
+          PY_EOF
+          find "$RES" -name '*.png' -exec ls -l {} \;
+
+      - name: Cai JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Cài Android SDK
+      - name: Cai Android SDK
         uses: android-actions/setup-android@v3
         with:
           packages: 'platform-tools platforms;android-34 build-tools;34.0.0'
 
-      - name: Cài Gradle 8.9
+      - name: Cai Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Khôi phục keystore ký app
+      - name: Khoi phuc keystore ky app
         run: |
           if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-            echo "::error::Thieu secret KEYSTORE_BASE64. Vao Settings > Secrets and variables > Actions de them."
+            echo "::error::Thieu secret KEYSTORE_BASE64."
             exit 1
           fi
           echo "${{ secrets.KEYSTORE_BASE64 }}" | tr -d '\n' | base64 -d > "$RUNNER_TEMP/signing.keystore"
@@ -80,27 +197,27 @@ jobs:
           VERSION_NAME: 1.0.${{ github.run_number }}
         run: gradle assembleRelease bundleRelease --no-daemon --stacktrace
 
-      - name: Gom file kết quả
+      - name: Gom file ket qua
         run: |
           mkdir -p dist
           find "${{ steps.find.outputs.dir }}" -name '*.apk' -path '*release*' -exec cp {} dist/TRA_CELL.apk \;
           find "${{ steps.find.outputs.dir }}" -name '*.aab' -path '*release*' -exec cp {} dist/TRA_CELL.aab \;
           ls -lh dist
 
-      - name: Tải lên artifact
+      - name: Tai len artifact
         uses: actions/upload-artifact@v4
         with:
           name: TRA_CELL-build-${{ github.run_number }}
           path: dist/*
 
-      - name: Tạo Release để tải APK về máy
+      - name: Tao Release de tai APK ve may
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
           name: TRA CELL 1.0.${{ github.run_number }}
           body: |
-            Bản build tự động số ${{ github.run_number }}.
-            Tải file TRA_CELL.apk rồi cài trực tiếp lên máy.
+            Ban build tu dong so ${{ github.run_number }}.
+            Tai file TRA_CELL.apk roi cai truc tiep len may.
           files: |
             dist/TRA_CELL.apk
             dist/TRA_CELL.aab
